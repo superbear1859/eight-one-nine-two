@@ -14,6 +14,14 @@ const MAX_HISTORY_LENGTH = 10;
 const MILESTONE_TILES = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 const SMASH_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 
+const THEMES = ['light', 'dark', 'neon-light', 'neon-dark'];
+const THEME_LABELS = {
+  light: 'Light',
+  dark: 'Dark',
+  'neon-light': 'Neon Light',
+  'neon-dark': 'Neon Dark',
+};
+
 const STORAGE_KEYS = {
   STATE_PREFIX: 'game_8192_state_v1_',
   BEST_PREFIX: 'game_8192_best_tile_v1_',
@@ -305,28 +313,31 @@ class Game8192 {
      Theme & Sound Initialization
      ------------------------------------------------------------------------ */
   initTheme() {
-    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    this.updateThemeUI(savedTheme);
+    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+    const theme = THEMES.includes(savedTheme) ? savedTheme : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    this.updateThemeUI(theme);
   }
 
   toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme') || 'light';
-    const next = current === 'dark' ? 'light' : 'dark';
+    const currentIndex = THEMES.indexOf(current);
+    const next = THEMES[(currentIndex + 1) % THEMES.length];
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem(STORAGE_KEYS.THEME, next);
     this.updateThemeUI(next);
   }
 
   updateThemeUI(theme) {
-    const moon = this.themeToggleBtn.querySelector('.moon-icon');
-    const sun = this.themeToggleBtn.querySelector('.sun-icon');
-    if (theme === 'dark') {
-      moon.classList.add('hidden');
-      sun.classList.remove('hidden');
-    } else {
-      moon.classList.remove('hidden');
-      sun.classList.add('hidden');
+    THEMES.forEach((t) => {
+      const icon = this.themeToggleBtn.querySelector(`.theme-icon-${t}`);
+      if (icon) {
+        icon.classList.toggle('hidden', t !== theme);
+      }
+    });
+    const labelEl = document.getElementById('theme-label');
+    if (labelEl) {
+      labelEl.textContent = THEME_LABELS[theme] || 'Light';
     }
   }
 

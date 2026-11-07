@@ -42,6 +42,42 @@
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
+[data-theme="neon-light"] {
+  --bg-page: #f5f3ff;
+  --text-main: #3b0764;
+  --text-light: #ffffff;
+  --text-muted: #7e22ce;
+  --board-bg: #ede9fe;
+  --cell-empty: rgba(196, 181, 253, 0.45);
+  --score-bg: #6d28d9;
+  --btn-bg: #d946ef;
+  --btn-bg-hover: #c026d3;
+  --btn-secondary-bg: #ddd6fe;
+  --btn-secondary-text: #4c1d95;
+  --btn-secondary-hover: #c4b5fd;
+  --overlay-bg: rgba(245, 243, 255, 0.86);
+  --overlay-win-bg: rgba(217, 70, 239, 0.65);
+  --shadow-soft: 0 0 26px rgba(217, 70, 239, 0.28), 0 8px 24px rgba(109, 40, 217, 0.18);
+}
+
+[data-theme="neon-dark"] {
+  --bg-page: #090910;
+  --text-main: #e0f2fe;
+  --text-light: #ffffff;
+  --text-muted: #38bdf8;
+  --board-bg: #0f1021;
+  --cell-empty: rgba(30, 41, 59, 0.75);
+  --score-bg: #131633;
+  --btn-bg: #06b6d4;
+  --btn-bg-hover: #0891b2;
+  --btn-secondary-bg: #1e1b4b;
+  --btn-secondary-text: #67e8f9;
+  --btn-secondary-hover: #312e81;
+  --overlay-bg: rgba(9, 9, 16, 0.88);
+  --overlay-win-bg: rgba(6, 182, 212, 0.55);
+  --shadow-soft: 0 0 32px rgba(6, 182, 212, 0.35), 0 0 12px rgba(236, 72, 153, 0.25);
+}
+
 /* Grid size adjustments for 4x4 through 10x10 */
 .board-container {
   --grid-count: 4;
@@ -362,14 +398,16 @@ body {
 }
 
 .undo-btn,
-.smash-btn {
+.smash-btn,
+.theme-btn {
   background-color: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
   padding: 8px 10px;
 }
 
 .undo-btn:hover:not(:disabled),
-.smash-btn:hover:not(:disabled) {
+.smash-btn:hover:not(:disabled),
+.theme-btn:hover:not(:disabled) {
   background-color: var(--btn-secondary-hover);
 }
 
@@ -766,6 +804,142 @@ body {
 [data-theme="dark"] .tile-4 .tile-inner {
   background: #e2d1b5;
   color: #3f3a34;
+}
+
+/* ==========================================================================
+   Neon Light Theme Overrides
+   ========================================================================== */
+[data-theme="neon-light"] .board-container {
+  border: 2px solid #d946ef;
+}
+[data-theme="neon-light"] .tile-2 .tile-inner {
+  background: #fae8ff;
+  color: #86198f;
+  border: 1.5px solid #f0abfc;
+  box-shadow: 0 0 8px rgba(217, 70, 239, 0.2);
+}
+[data-theme="neon-light"] .tile-4 .tile-inner {
+  background: #e0f2fe;
+  color: #075985;
+  border: 1.5px solid #7dd3fc;
+  box-shadow: 0 0 8px rgba(14, 165, 233, 0.22);
+}
+[data-theme="neon-light"] .tile-8 .tile-inner {
+  background: linear-gradient(135deg, #f472b6, #e879f9);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.45);
+}
+[data-theme="neon-light"] .tile-16 .tile-inner {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+}
+[data-theme="neon-light"] .tile-32 .tile-inner {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.5);
+}
+[data-theme="neon-light"] .tile-64 .tile-inner {
+  background: linear-gradient(135deg, #fb7185, #f97316);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.5);
+}
+[data-theme="neon-light"] .tile-128 .tile-inner {
+  background: linear-gradient(135deg, #2dd4bf, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(6, 182, 212, 0.55);
+}
+[data-theme="neon-light"] .tile-256 .tile-inner {
+  background: linear-gradient(135deg, #facc15, #f97316);
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.6);
+}
+[data-theme="neon-light"] .tile-512 .tile-inner {
+  background: linear-gradient(135deg, #c084fc, #6366f1);
+  color: #ffffff;
+  box-shadow: 0 0 22px rgba(99, 102, 241, 0.6);
+}
+[data-theme="neon-light"] .tile-1024 .tile-inner {
+  background: linear-gradient(135deg, #f43f5e, #d946ef);
+  color: #ffffff;
+  box-shadow: 0 0 24px rgba(244, 63, 94, 0.65);
+}
+
+/* ==========================================================================
+   Neon Dark (Cyberpunk) Theme Overrides
+   ========================================================================== */
+[data-theme="neon-dark"] .board-container {
+  border: 1.5px solid rgba(6, 182, 212, 0.6);
+}
+[data-theme="neon-dark"] .score-box {
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
+}
+[data-theme="neon-dark"] .score-label {
+  color: #38bdf8;
+}
+[data-theme="neon-dark"] .score-addition {
+  color: #22d3ee;
+}
+[data-theme="neon-dark"] .tile-2 .tile-inner {
+  background: #0f172a;
+  color: #38bdf8;
+  border: 1.5px solid #0284c7;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3), inset 0 0 6px rgba(56, 189, 248, 0.15);
+}
+[data-theme="neon-dark"] .tile-4 .tile-inner {
+  background: #1e1b4b;
+  color: #c084fc;
+  border: 1.5px solid #9333ea;
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.35), inset 0 0 6px rgba(192, 132, 252, 0.18);
+}
+[data-theme="neon-dark"] .tile-8 .tile-inner {
+  background: #2e1065;
+  color: #f472b6;
+  border: 1.5px solid #ec4899;
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.45), inset 0 0 8px rgba(236, 72, 153, 0.2);
+}
+[data-theme="neon-dark"] .tile-16 .tile-inner {
+  background: #042f2e;
+  color: #2dd4bf;
+  border: 1.5px solid #14b8a6;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.5), inset 0 0 8px rgba(45, 212, 191, 0.25);
+}
+[data-theme="neon-dark"] .tile-32 .tile-inner {
+  background: #3b0764;
+  color: #e879f9;
+  border: 1.5px solid #d946ef;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.55), inset 0 0 8px rgba(217, 70, 239, 0.25);
+}
+[data-theme="neon-dark"] .tile-64 .tile-inner {
+  background: #450a0a;
+  color: #fb7185;
+  border: 1.5px solid #f43f5e;
+  box-shadow: 0 0 18px rgba(244, 63, 94, 0.6), inset 0 0 10px rgba(244, 63, 94, 0.25);
+}
+[data-theme="neon-dark"] .tile-128 .tile-inner {
+  background: #083344;
+  color: #22d3ee;
+  border: 2px solid #06b6d4;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.7), inset 0 0 10px rgba(6, 182, 212, 0.35);
+}
+[data-theme="neon-dark"] .tile-256 .tile-inner {
+  background: #052e16;
+  color: #4ade80;
+  border: 2px solid #22c55e;
+  box-shadow: 0 0 22px rgba(34, 197, 94, 0.7), inset 0 0 10px rgba(34, 197, 94, 0.35);
+}
+[data-theme="neon-dark"] .tile-512 .tile-inner {
+  background: #422006;
+  color: #facc15;
+  border: 2px solid #eab308;
+  box-shadow: 0 0 24px rgba(234, 179, 8, 0.75), inset 0 0 12px rgba(234, 179, 8, 0.35);
+}
+[data-theme="neon-dark"] .tile-1024 .tile-inner {
+  background: #4a044e;
+  color: #f0abfc;
+  border: 2px solid #e879f9;
+  box-shadow: 0 0 26px rgba(232, 121, 249, 0.8), inset 0 0 12px rgba(232, 121, 249, 0.4);
 }
 
 /* ==========================================================================
