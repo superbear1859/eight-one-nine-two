@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>8192 — Slide &amp; Merge Puzzle</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header: Title + Stats -->
+    <header class="game-header">
+      <div class="title-block">
+        <h1 class="game-title">8192</h1>
+        <p class="game-subtitle">Join the numbers and get to the <strong>8192 tile!</strong></p>
+      </div>
+
+      <div class="scores-container">
+        <div class="score-box">
+          <span class="score-label">SCORE</span>
+          <span class="score-value" id="current-score">0</span>
+          <span class="score-addition" id="score-addition"></span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">BEST</span>
+          <span class="score-value" id="best-score">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Controls Toolbar -->
+    <section class="controls-bar" aria-label="Game Controls">
+      <div class="size-selector" role="group" aria-label="Grid Size">
+        <button type="button" class="size-btn active" data-size="4">4×4</button>
+        <button type="button" class="size-btn" data-size="5">5×5</button>
+        <button type="button" class="size-btn" data-size="6">6×6</button>
+      </div>
+
+      <div class="action-buttons">
+        <button type="button" class="action-btn undo-btn" id="undo-btn" title="Undo last move (U or Backspace)">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7v6h6"></path>
+            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+          </svg>
+          <span>Undo</span>
+          <span class="undo-badge" id="undo-count">3</span>
+        </button>
+
+        <button type="button" class="action-btn smash-btn" id="smash-btn" title="Smash / Remove a tile (X)">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9"></path>
+            <path d="M17.64 15 22 10.64"></path>
+            <path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91"></path>
+          </svg>
+          <span>Smash</span>
+          <span class="undo-badge smash-badge" id="smash-count">2</span>
+        </button>
+
+        <button type="button" class="icon-btn" id="sound-toggle" title="Toggle Sound Effects" aria-label="Toggle Sound Effects">
+          <svg class="icon sound-on-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+          <svg class="icon sound-off-icon hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+
+        <button type="button" class="icon-btn" id="theme-toggle" title="Toggle Light/Dark Mode" aria-label="Toggle Light/Dark Mode">
+          <svg class="icon moon-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg class="icon sun-icon hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <button type="button" class="action-btn new-game-btn" id="new-game-btn" title="Start a new game (N)">
+          New Game
+        </button>
+      </div>
+    </section>
+
+    <!-- Milestone Notification Toast -->
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+    <!-- Main Game Board -->
+    <main class="board-wrapper">
+      <div class="board-container" id="board-container" data-grid-size="4">
+        <div class="grid-background" id="grid-background"></div>
+        <div class="tile-container" id="tile-container"></div>
+
+        <!-- Overlay for Win / Game Over -->
+        <div class="game-overlay hidden" id="game-overlay">
+          <div class="overlay-content">
+            <h2 class="overlay-title" id="overlay-title">You Win!</h2>
+            <p class="overlay-message" id="overlay-message">You reached the 8192 tile!</p>
+            <div class="overlay-actions">
+              <button type="button" class="overlay-btn primary-btn hidden" id="keep-going-btn">Keep Going</button>
+              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-undo-btn">Undo Last Move</button>
+              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-smash-btn">Smash a Tile</button>
+              <button type="button" class="overlay-btn primary-btn" id="try-again-btn">Play Again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Instructions -->
+    <footer class="game-footer">
+      <p class="how-to-play">
+        <strong>HOW TO PLAY:</strong> Use your <strong>arrow keys</strong>, <strong>WASD</strong>, or <strong>swipe</strong> to slide tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+      </p>
+      <p class="undo-rules">
+        <strong>POWER-UPS:</strong> Start with <strong>3 Undos</strong> (max 5) and <strong>2 Smashes</strong> (max 3). Click <strong>Smash</strong> (or press <strong>X</strong>) and click any tile on the board to destroy it! Earn <strong>+1 Undo</strong> on every new merged block (<strong>8+</strong>) and <strong>+1 Smash</strong> on major milestone blocks (<strong>128</strong>, <strong>256</strong>, <strong>512</strong>, <strong>1024+</strong>).
+      </p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
