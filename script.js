@@ -5,7 +5,12 @@
  */
 
 const WIN_TARGET = 8192;
-const GRID_UNLOCK_TILE = 128;
+
+// Tile required on grid size `s` to unlock grid size `s + 1`
+// 4x4 -> 5x5: 128, 5x5 -> 6x6: 256, 6x6 -> 7x7: 512, 7x7 -> 8x8: 1024, 8x8 -> 9x9: 2048, 9x9 -> 10x10: 4096
+function getUnlockTargetForSize(size) {
+  return 128 * Math.pow(2, size - 4);
+}
 const INITIAL_UNDOS = 3;
 const MAX_UNDOS = 5;
 const INITIAL_SMASHES = 2;
@@ -283,7 +288,8 @@ class Game8192 {
     let unlocked = 4;
     for (let s = 4; s < 10; s++) {
       const bestForSize = parseInt(localStorage.getItem(STORAGE_KEYS.BEST_PREFIX + s), 10) || 0;
-      if (bestForSize >= GRID_UNLOCK_TILE && s >= unlocked) {
+      const requiredTile = getUnlockTargetForSize(s);
+      if (bestForSize >= requiredTile && s >= unlocked) {
         unlocked = s + 1;
       } else if (s >= unlocked) {
         break;
@@ -322,8 +328,9 @@ class Game8192 {
         btn.innerHTML = `${btnSize}×${btnSize}`;
         btn.title = `Play ${btnSize}×${btnSize} grid`;
       } else {
+        const requiredTile = getUnlockTargetForSize(btnSize - 1);
         btn.innerHTML = `${lockSvg}<span>${btnSize}×${btnSize}</span>`;
-        btn.title = `Locked — Reach the ${GRID_UNLOCK_TILE} tile on ${btnSize - 1}×${btnSize - 1} to unlock!`;
+        btn.title = `Locked — Reach the ${requiredTile} tile on ${btnSize - 1}×${btnSize - 1} to unlock!`;
       }
       if (newlyUnlockedSize === btnSize) {
         btn.classList.remove('newly-unlocked');
@@ -382,8 +389,9 @@ class Game8192 {
      ------------------------------------------------------------------------ */
   switchGridSize(newSize, saveCurrentFirst = true) {
     if (newSize > this.maxUnlockedSize) {
+      const requiredTile = getUnlockTargetForSize(newSize - 1);
       this.showToast(
-        `Locked! Get a ${GRID_UNLOCK_TILE} tile on ${newSize - 1}×${newSize - 1} to unlock ${newSize}×${newSize}!`
+        `Locked! Get a ${requiredTile} tile on ${newSize - 1}×${newSize - 1} to unlock ${newSize}×${newSize}!`
       );
       return;
     }
@@ -751,9 +759,10 @@ class Game8192 {
     this.spawnRandomTile();
     this.updateBestFromGrid();
 
-    // Check if reaching 128+ on this grid unlocks the next grid size
+    // Check if reaching the target tile on this grid unlocks the next grid size
+    const unlockRequirement = getUnlockTargetForSize(this.size);
     if (
-      this.bestScore >= GRID_UNLOCK_TILE &&
+      this.bestScore >= unlockRequirement &&
       this.size < 10 &&
       this.maxUnlockedSize === this.size
     ) {

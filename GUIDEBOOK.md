@@ -44,14 +44,17 @@ Once your corner block reaches `512` or `1024`, random merging won't be enough�
 
 ## 4. Grid Progression (`4×4` to `10×10`)
 
-Each grid size has its own saved board and **BEST** block record. Merging a **`128` tile** on your current highest unlocked grid unlocks the next size up:
+Each grid size has its own saved board and **BEST** block record. Each board doubles the milestone block required to unlock the next size up:
 
 | Grid Size | Unlock Requirement | Strategy Notes |
 | :--- | :--- | :--- |
 | **4×4** | Unlocked by default | Tight tactical space; rely on strict corner discipline and save Smashes for `1024+` endgames. |
 | **5×5** | Reach `128` on `4×4` | 25 cells give you a 5-tile snake row—greatly reduces forced Up moves. |
-| **6×6** | Reach `128` on `5×5` | Spacious mid-size board; ideal for pushing past `8192` into `16384`. |
-| **7×7 – 10×10** | Reach `128` on previous size | Massive sandboxes (up to 100 cells!) where you can build multi-row snakes and chase `32768` and `65536`. |
+| **6×6** | Reach `256` on `5×5` | Spacious mid-size board; ideal for pushing past `8192` into `16384`. |
+| **7×7** | Reach `512` on `6×6` | Wide open grid where 2-row snake chains easily reach `4096+`. |
+| **8×8** | Reach `1024` on `7×7` | 64 cells; build long cascades without worrying about tight corners. |
+| **9×9** | Reach `2048` on `8×8` | 81 cells; great for practicing `16384` and `32768` chains. |
+| **10×10** | Reach `4096` on `9×9` | Ultimate 100-cell sandbox for chasing `65536` and beyond! |
 
 ---
 
