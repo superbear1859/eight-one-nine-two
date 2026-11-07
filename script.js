@@ -246,6 +246,7 @@ class Game8192 {
     this.tryAgainBtn = document.getElementById('try-again-btn');
 
     this.sizeButtons = Array.from(document.querySelectorAll('.size-btn'));
+    this.resetUnlocksBtn = document.getElementById('reset-unlocks-btn');
 
     // Internal State
     this.nextTileId = 1;
@@ -274,9 +275,12 @@ class Game8192 {
   }
 
   computeMaxUnlockedSize() {
-    let unlocked = parseInt(localStorage.getItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE), 10) || 4;
-    if (unlocked < 4) unlocked = 4;
-    // Also check saved best tiles sequentially in case previous progress already reached 128+
+    const saved = localStorage.getItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE);
+    if (saved !== null) {
+      const parsed = parseInt(saved, 10);
+      return Math.min(10, Math.max(4, parsed || 4));
+    }
+    let unlocked = 4;
     for (let s = 4; s < 10; s++) {
       const bestForSize = parseInt(localStorage.getItem(STORAGE_KEYS.BEST_PREFIX + s), 10) || 0;
       if (bestForSize >= GRID_UNLOCK_TILE && s >= unlocked) {
@@ -288,6 +292,23 @@ class Game8192 {
     unlocked = Math.min(10, unlocked);
     localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, String(unlocked));
     return unlocked;
+  }
+
+  resetGridUnlocks() {
+    this.maxUnlockedSize = 4;
+    localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, '4');
+
+    // Clear saved boards and best blocks so the player can re-unlock 5x5..10x10 cleanly
+    for (let s = 4; s <= 10; s++) {
+      localStorage.removeItem(STORAGE_KEYS.STATE_PREFIX + s);
+      localStorage.removeItem(STORAGE_KEYS.BEST_PREFIX + s);
+    }
+
+    this.bestScore = 0;
+    this.switchGridSize(4, false);
+    this.startNewGame();
+    this.updateSizeButtonsUI();
+    this.showToast('Grid unlocks reset back to 4×4!');
   }
 
   updateSizeButtonsUI(newlyUnlockedSize = null) {
@@ -1066,6 +1087,12 @@ class Game8192 {
         }
       });
     });
+
+    if (this.resetUnlocksBtn) {
+      this.resetUnlocksBtn.addEventListener('click', () => {
+        this.resetGridUnlocks();
+      });
+    }
 
     // Toolbar Actions
     this.newGameBtn.addEventListener('click', () => this.startNewGame());

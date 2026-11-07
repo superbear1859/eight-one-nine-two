@@ -354,6 +354,39 @@ body {
   flex-shrink: 0;
 }
 
+.reset-unlocks-btn {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 0.74rem;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 2px;
+  transition: all 0.18s ease;
+}
+
+[data-theme="dark"] .reset-unlocks-btn,
+[data-theme="neon-dark"] .reset-unlocks-btn {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.reset-unlocks-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.reset-unlocks-btn:active {
+  transform: scale(0.95);
+}
+
 .size-btn.newly-unlocked {
   animation: unlock-pulse 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
