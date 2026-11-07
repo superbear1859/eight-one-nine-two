@@ -231,6 +231,9 @@ class Game8192 {
     this.newGameBtn = document.getElementById('new-game-btn');
     this.soundToggleBtn = document.getElementById('sound-toggle');
     this.themeToggleBtn = document.getElementById('theme-toggle');
+    this.guideBtn = document.getElementById('guide-btn');
+    this.guideModal = document.getElementById('guide-modal');
+    this.guideCloseBtn = document.getElementById('guide-close-btn');
     this.toastContainer = document.getElementById('toast-container');
 
     // Overlay Elements
@@ -1106,9 +1109,36 @@ class Game8192 {
       this.toggleTheme();
     });
 
-    // Keyboard Controls (Arrow keys, WASD, U/Backspace for Undo, X for Smash, Escape to cancel Smash, N for New Game)
+    if (this.guideBtn && this.guideModal) {
+      this.guideBtn.addEventListener('click', () => {
+        this.guideModal.classList.remove('hidden');
+      });
+    }
+    if (this.guideCloseBtn && this.guideModal) {
+      this.guideCloseBtn.addEventListener('click', () => {
+        this.guideModal.classList.add('hidden');
+      });
+    }
+    if (this.guideModal) {
+      this.guideModal.addEventListener('click', (e) => {
+        if (e.target === this.guideModal) {
+          this.guideModal.classList.add('hidden');
+        }
+      });
+    }
+
+    // Keyboard Controls (Arrow keys, WASD, U/Backspace for Undo, X for Smash, G for Guide, Escape to cancel/close, N for New Game)
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+      const isGuideOpen = this.guideModal && !this.guideModal.classList.contains('hidden');
+      if (isGuideOpen) {
+        if (e.code === 'Escape' || e.code === 'KeyG') {
+          e.preventDefault();
+          this.guideModal.classList.add('hidden');
+        }
+        return;
+      }
 
       const keyMap = {
         ArrowUp: 'up',
@@ -1130,6 +1160,11 @@ class Game8192 {
       } else if (e.code === 'KeyX') {
         e.preventDefault();
         this.toggleSmashMode();
+      } else if (e.code === 'KeyG') {
+        e.preventDefault();
+        if (this.guideModal) {
+          this.guideModal.classList.remove('hidden');
+        }
       } else if (e.code === 'Escape' && this.smashMode) {
         e.preventDefault();
         this.setSmashMode(false);

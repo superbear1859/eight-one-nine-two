@@ -399,7 +399,8 @@ body {
 
 .undo-btn,
 .smash-btn,
-.theme-btn {
+.theme-btn,
+.guide-btn {
   background-color: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
   padding: 8px 10px;
@@ -407,7 +408,8 @@ body {
 
 .undo-btn:hover:not(:disabled),
 .smash-btn:hover:not(:disabled),
-.theme-btn:hover:not(:disabled) {
+.theme-btn:hover:not(:disabled),
+.guide-btn:hover:not(:disabled) {
   background-color: var(--btn-secondary-hover);
 }
 
@@ -1050,4 +1052,203 @@ body {
 .undo-rules {
   border-top: 1px solid rgba(119, 110, 101, 0.2);
   padding-top: 8px;
+}
+
+/* ==========================================================================
+   8192 Strategy Guide Book Modal
+   ========================================================================== */
+
+.guide-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 14px;
+  animation: fade-in 200ms ease forwards;
+}
+
+.guide-modal-card {
+  width: 100%;
+  max-width: 520px;
+  max-height: 86vh;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  border: 1.5px solid var(--btn-secondary-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+[data-theme="neon-light"] .guide-modal-card {
+  border-color: #d946ef;
+  box-shadow: 0 0 30px rgba(217, 70, 239, 0.35), 0 18px 40px rgba(109, 40, 217, 0.22);
+}
+
+[data-theme="neon-dark"] .guide-modal-card {
+  border-color: #06b6d4;
+  box-shadow: 0 0 34px rgba(6, 182, 212, 0.4), 0 0 14px rgba(236, 72, 153, 0.25);
+}
+
+.guide-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border-bottom: 1px solid rgba(119, 110, 101, 0.15);
+}
+
+.guide-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guide-header-title h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.guide-close-btn {
+  border: none;
+  background: transparent;
+  color: var(--btn-secondary-text);
+  font-size: 1.15rem;
+  font-weight: 800;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+
+.guide-close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.guide-modal-body {
+  padding: 18px 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide-section h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--btn-bg);
+}
+
+[data-theme="dark"] .guide-section h3 {
+  color: #818cf8;
+}
+
+[data-theme="neon-dark"] .guide-section h3 {
+  color: #22d3ee;
+}
+
+.guide-section ul {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guide-section code,
+.guide-section kbd {
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.snake-diagram {
+  background-color: var(--board-bg);
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.snake-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.snake-cell {
+  width: 48px;
+  height: 38px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #ffffff;
+}
+
+.snake-cell.tier-hi {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+}
+
+.snake-cell.tier-mid {
+  background: #edc850;
+}
+
+.snake-cell.tier-low {
+  background: #f59563;
+}
+
+.snake-arrow {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.snake-turn {
+  width: 238px;
+  text-align: right;
+  padding-right: 18px;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+  background-color: rgba(119, 110, 101, 0.08);
+  padding: 10px 12px;
+  border-radius: 8px;
 }
