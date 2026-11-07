@@ -5,6 +5,7 @@
  */
 
 const WIN_TARGET = 8192;
+const GRID_UNLOCK_TILE = 128;
 const INITIAL_UNDOS = 3;
 const MAX_UNDOS = 5;
 const INITIAL_SMASHES = 2;
@@ -16,6 +17,7 @@ const SMASH_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 327
 const STORAGE_KEYS = {
   STATE_PREFIX: 'game_8192_state_v1_',
   BEST_PREFIX: 'game_8192_best_tile_v1_',
+  MAX_UNLOCKED_SIZE: 'game_8192_max_unlocked_size_v1',
   THEME: 'game_8192_theme_v1',
   SOUND: 'game_8192_sound_v1',
   ACTIVE_SIZE: 'game_8192_active_size_v1',
@@ -236,8 +238,10 @@ class Game8192 {
 
     // Internal State
     this.nextTileId = 1;
+    this.maxUnlockedSize = this.computeMaxUnlockedSize();
     const savedSize = parseInt(localStorage.getItem(STORAGE_KEYS.ACTIVE_SIZE), 10);
-    this.size = savedSize >= 4 && savedSize <= 10 ? savedSize : 4;
+    this.size =
+      savedSize >= 4 && savedSize <= 10 && savedSize <= this.maxUnlockedSize ? savedSize : 4;
 
     this.grid = [];
     this.score = 0;
@@ -253,8 +257,48 @@ class Game8192 {
 
     this.initTheme();
     this.updateSoundUI();
+    this.updateSizeButtonsUI();
     this.bindEvents();
     this.switchGridSize(this.size, false);
+  }
+
+  computeMaxUnlockedSize() {
+    let unlocked = parseInt(localStorage.getItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE), 10) || 4;
+    if (unlocked < 4) unlocked = 4;
+    // Also check saved best tiles sequentially in case previous progress already reached 128+
+    for (let s = 4; s < 10; s++) {
+      const bestForSize = parseInt(localStorage.getItem(STORAGE_KEYS.BEST_PREFIX + s), 10) || 0;
+      if (bestForSize >= GRID_UNLOCK_TILE && s >= unlocked) {
+        unlocked = s + 1;
+      } else if (s >= unlocked) {
+        break;
+      }
+    }
+    unlocked = Math.min(10, unlocked);
+    localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, String(unlocked));
+    return unlocked;
+  }
+
+  updateSizeButtonsUI(newlyUnlockedSize = null) {
+    const lockSvg = `<svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+    this.sizeButtons.forEach((btn) => {
+      const btnSize = parseInt(btn.getAttribute('data-size'), 10);
+      const isUnlocked = btnSize <= this.maxUnlockedSize;
+      btn.classList.toggle('active', btnSize === this.size);
+      btn.classList.toggle('locked', !isUnlocked);
+      if (isUnlocked) {
+        btn.innerHTML = `${btnSize}×${btnSize}`;
+        btn.title = `Play ${btnSize}×${btnSize} grid`;
+      } else {
+        btn.innerHTML = `${lockSvg}<span>${btnSize}×${btnSize}</span>`;
+        btn.title = `Locked — Reach the ${GRID_UNLOCK_TILE} tile on ${btnSize - 1}×${btnSize - 1} to unlock!`;
+      }
+      if (newlyUnlockedSize === btnSize) {
+        btn.classList.remove('newly-unlocked');
+        void btn.offsetWidth;
+        btn.classList.add('newly-unlocked');
+      }
+    });
   }
 
   /* ------------------------------------------------------------------------
@@ -302,6 +346,13 @@ class Game8192 {
      Grid Setup & State Persistence per Size
      ------------------------------------------------------------------------ */
   switchGridSize(newSize, saveCurrentFirst = true) {
+    if (newSize > this.maxUnlockedSize) {
+      this.showToast(
+        `Locked! Get a ${GRID_UNLOCK_TILE} tile on ${newSize - 1}×${newSize - 1} to unlock ${newSize}×${newSize}!`
+      );
+      return;
+    }
+
     this.setSmashMode(false);
     if (saveCurrentFirst && this.grid.length > 0) {
       this.saveState();
@@ -311,10 +362,7 @@ class Game8192 {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_SIZE, String(this.size));
 
     // Update size selector buttons & board attribute
-    this.sizeButtons.forEach((btn) => {
-      const btnSize = parseInt(btn.getAttribute('data-size'), 10);
-      btn.classList.toggle('active', btnSize === this.size);
-    });
+    this.updateSizeButtonsUI();
     this.boardContainer.setAttribute('data-grid-size', String(this.size));
 
     // Build background empty cells
@@ -667,6 +715,19 @@ class Game8192 {
     // Spawn new tile and update Best Block for this grid size
     this.spawnRandomTile();
     this.updateBestFromGrid();
+
+    // Check if reaching 128+ on this grid unlocks the next grid size
+    if (
+      this.bestScore >= GRID_UNLOCK_TILE &&
+      this.size < 10 &&
+      this.maxUnlockedSize === this.size
+    ) {
+      this.maxUnlockedSize = this.size + 1;
+      localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, String(this.maxUnlockedSize));
+      this.updateSizeButtonsUI(this.maxUnlockedSize);
+      earnedPowerup = true;
+      this.showToast(`🎉 ${this.maxUnlockedSize}×${this.maxUnlockedSize} Grid Unlocked!`);
+    }
 
     // Check Game Over
     if (!this.hasMovesAvailable()) {
