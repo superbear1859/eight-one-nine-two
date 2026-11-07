@@ -237,7 +237,7 @@ class Game8192 {
     // Internal State
     this.nextTileId = 1;
     const savedSize = parseInt(localStorage.getItem(STORAGE_KEYS.ACTIVE_SIZE), 10);
-    this.size = [4, 5, 6].includes(savedSize) ? savedSize : 4;
+    this.size = savedSize >= 4 && savedSize <= 10 ? savedSize : 4;
 
     this.grid = [];
     this.score = 0;

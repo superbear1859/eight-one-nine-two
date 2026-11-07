@@ -42,7 +42,7 @@
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
-/* Grid size adjustments for 4x4, 5x5, and 6x6 */
+/* Grid size adjustments for 4x4 through 10x10 */
 .board-container {
   --grid-count: 4;
   --grid-gap: 12px;
@@ -71,6 +71,34 @@
   --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
 }
 
+.board-container[data-grid-size="7"] {
+  --grid-count: 7;
+  --grid-gap: 6px;
+  --tile-radius: 5px;
+  --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
+}
+
+.board-container[data-grid-size="8"] {
+  --grid-count: 8;
+  --grid-gap: 5px;
+  --tile-radius: 5px;
+  --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
+}
+
+.board-container[data-grid-size="9"] {
+  --grid-count: 9;
+  --grid-gap: 4px;
+  --tile-radius: 4px;
+  --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
+}
+
+.board-container[data-grid-size="10"] {
+  --grid-count: 10;
+  --grid-gap: 4px;
+  --tile-radius: 4px;
+  --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
+}
+
 @media (max-width: 480px) {
   .board-container[data-grid-size="4"] {
     --grid-gap: 9px;
@@ -82,6 +110,22 @@
   }
   .board-container[data-grid-size="6"] {
     --grid-gap: 6px;
+    --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
+  }
+  .board-container[data-grid-size="7"] {
+    --grid-gap: 5px;
+    --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
+  }
+  .board-container[data-grid-size="8"] {
+    --grid-gap: 4px;
+    --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
+  }
+  .board-container[data-grid-size="9"] {
+    --grid-gap: 3px;
+    --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
+  }
+  .board-container[data-grid-size="10"] {
+    --grid-gap: 3px;
     --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
   }
 }
@@ -234,7 +278,8 @@ body {
   background-color: var(--btn-secondary-bg);
   padding: 4px;
   border-radius: 8px;
-  gap: 4px;
+  gap: 3px;
+  flex-wrap: wrap;
 }
 
 .size-btn {
@@ -242,8 +287,8 @@ body {
   background: transparent;
   color: var(--btn-secondary-text);
   font-weight: 700;
-  font-size: 0.85rem;
-  padding: 6px 11px;
+  font-size: 0.78rem;
+  padding: 6px 8px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.18s ease;
@@ -571,6 +616,30 @@ body {
 .board-container[data-grid-size="6"] .tile-digits-3 .tile-inner { font-size: clamp(0.92rem, 4vw, 1.25rem); }
 .board-container[data-grid-size="6"] .tile-digits-4 .tile-inner { font-size: clamp(0.78rem, 3.3vw, 1.05rem); }
 .board-container[data-grid-size="6"] .tile-digits-5 .tile-inner { font-size: clamp(0.68rem, 2.8vw, 0.9rem); }
+
+/* 7x7 font sizes */
+.board-container[data-grid-size="7"] .tile-inner { font-size: clamp(0.9rem, 3.8vw, 1.25rem); }
+.board-container[data-grid-size="7"] .tile-digits-3 .tile-inner { font-size: clamp(0.78rem, 3.3vw, 1.05rem); }
+.board-container[data-grid-size="7"] .tile-digits-4 .tile-inner { font-size: clamp(0.66rem, 2.8vw, 0.88rem); }
+.board-container[data-grid-size="7"] .tile-digits-5 .tile-inner { font-size: clamp(0.56rem, 2.4vw, 0.74rem); }
+
+/* 8x8 font sizes */
+.board-container[data-grid-size="8"] .tile-inner { font-size: clamp(0.8rem, 3.3vw, 1.1rem); }
+.board-container[data-grid-size="8"] .tile-digits-3 .tile-inner { font-size: clamp(0.68rem, 2.9vw, 0.92rem); }
+.board-container[data-grid-size="8"] .tile-digits-4 .tile-inner { font-size: clamp(0.58rem, 2.4vw, 0.76rem); }
+.board-container[data-grid-size="8"] .tile-digits-5 .tile-inner { font-size: clamp(0.5rem, 2vw, 0.65rem); }
+
+/* 9x9 font sizes */
+.board-container[data-grid-size="9"] .tile-inner { font-size: clamp(0.72rem, 2.9vw, 0.96rem); }
+.board-container[data-grid-size="9"] .tile-digits-3 .tile-inner { font-size: clamp(0.62rem, 2.5vw, 0.82rem); }
+.board-container[data-grid-size="9"] .tile-digits-4 .tile-inner { font-size: clamp(0.52rem, 2.1vw, 0.68rem); }
+.board-container[data-grid-size="9"] .tile-digits-5 .tile-inner { font-size: clamp(0.45rem, 1.8vw, 0.58rem); }
+
+/* 10x10 font sizes */
+.board-container[data-grid-size="10"] .tile-inner { font-size: clamp(0.65rem, 2.6vw, 0.86rem); }
+.board-container[data-grid-size="10"] .tile-digits-3 .tile-inner { font-size: clamp(0.56rem, 2.2vw, 0.74rem); }
+.board-container[data-grid-size="10"] .tile-digits-4 .tile-inner { font-size: clamp(0.48rem, 1.9vw, 0.62rem); }
+.board-container[data-grid-size="10"] .tile-digits-5 .tile-inner { font-size: clamp(0.41rem, 1.6vw, 0.52rem); }
 
 /* ==========================================================================
    Tile Palette: Warm Classic (2 - 1024) + Vibrant High-Tier Glow (2048 - 8192+)
