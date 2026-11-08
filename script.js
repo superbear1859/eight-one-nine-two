@@ -1524,6 +1524,10 @@ class Game8192 {
       this.swapsRemaining = SECRET_POWERUP_AMOUNT;
       this.doublesRemaining = SECRET_POWERUP_AMOUNT;
 
+      this.maxUnlockedSize = 10;
+      localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, '10');
+      this.updateSizeButtonsUI(10);
+
       this.pulseUndoBadge();
       this.pulseSmashBadge();
       this.pulseSwapBadge();
@@ -1532,7 +1536,7 @@ class Game8192 {
       this.saveState();
       this.updateUI();
       this.closeSecretModal();
-      this.showToast('🐻 SUPERBEAR UNLOCKED! 100 of every Power-Up!');
+      this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10) & 100 of every Power-Up!');
     } else {
       this.showToast('Wrong password!');
       if (this.secretInput) {

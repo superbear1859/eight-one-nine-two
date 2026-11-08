@@ -310,12 +310,14 @@ body {
 }
 
 .size-selector {
-  display: inline-flex;
+  display: flex;
   background-color: var(--btn-secondary-bg);
   padding: 4px;
   border-radius: 8px;
   gap: 3px;
   flex-wrap: wrap;
+  width: 100%;
+  justify-content: center;
 }
 
 .size-btn {
@@ -408,7 +410,10 @@ body {
 .action-buttons {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .action-btn,
@@ -1435,4 +1440,77 @@ body {
 
 .secret-submit-btn {
   padding: 9px 16px;
+}
+
+/* ==========================================================================
+   Mobile Responsive Layout (Ensure all toolbar & grid buttons fit cleanly)
+   ========================================================================== */
+
+@media (max-width: 520px) {
+  body {
+    padding: 14px 10px 28px;
+  }
+
+  .app-container {
+    gap: 10px;
+  }
+
+  .game-title {
+    font-size: 2.5rem;
+  }
+
+  .game-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .score-box {
+    padding: 6px 10px;
+    min-width: 68px;
+  }
+
+  .score-value {
+    font-size: 1.15rem;
+  }
+
+  .size-selector {
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .size-btn {
+    font-size: 0.72rem;
+    padding: 5px 6px;
+  }
+
+  .reset-unlocks-btn {
+    font-size: 0.7rem;
+    padding: 5px 6px;
+  }
+
+  .action-buttons {
+    gap: 5px;
+  }
+
+  .undo-btn,
+  .smash-btn,
+  .swap-btn,
+  .double-btn,
+  .theme-btn,
+  .guide-btn,
+  .new-game-btn {
+    padding: 7px 8px;
+    font-size: 0.78rem;
+    gap: 4px;
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .undo-badge {
+    font-size: 0.68rem;
+    padding: 1px 5px;
+    min-width: 18px;
+  }
 }
