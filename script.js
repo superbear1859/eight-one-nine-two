@@ -41,7 +41,84 @@ const STORAGE_KEYS = {
   MAX_UNLOCKED_SIZE: 'game_8192_max_unlocked_size_v1',
   THEME: 'game_8192_theme_v1',
   SOUND: 'game_8192_sound_v1',
+  MUSIC: 'game_8192_music_v1',
   ACTIVE_SIZE: 'game_8192_active_size_v1',
+};
+
+// Theme-based background music definitions (Web Audio procedural soundtracks)
+const THEME_MUSIC = {
+  light: {
+    name: 'Sunny Marimba',
+    stepMs: 270,
+    leadType: 'sine',
+    leadGain: 0.038,
+    leadDecay: 0.34,
+    bassType: 'triangle',
+    bassGain: 0.028,
+    bassDecay: 0.45,
+    lead: [
+      523.25, 659.25, 783.99, 659.25, 880.0, 783.99, 659.25, 587.33,
+      523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 523.25, 0,
+    ],
+    bass: [
+      261.63, 0, 261.63, 0, 220.0, 0, 220.0, 0,
+      174.61, 0, 174.61, 0, 196.0, 0, 196.0, 0,
+    ],
+  },
+  dark: {
+    name: 'Midnight Lo-Fi',
+    stepMs: 360,
+    leadType: 'triangle',
+    leadGain: 0.034,
+    leadDecay: 0.55,
+    bassType: 'sine',
+    bassGain: 0.042,
+    bassDecay: 0.65,
+    lead: [
+      440.0, 0, 523.25, 659.25, 587.33, 0, 523.25, 440.0,
+      392.0, 0, 440.0, 523.25, 493.88, 0, 392.0, 0,
+    ],
+    bass: [
+      110.0, 0, 0, 110.0, 146.83, 0, 0, 146.83,
+      130.81, 0, 0, 130.81, 164.81, 0, 123.47, 0,
+    ],
+  },
+  'neon-light': {
+    name: 'Arcade Pop',
+    stepMs: 185,
+    leadType: 'triangle',
+    leadGain: 0.036,
+    leadDecay: 0.2,
+    bassType: 'sawtooth',
+    bassGain: 0.016,
+    bassDecay: 0.19,
+    lead: [
+      659.25, 783.99, 987.77, 1318.51, 987.77, 783.99, 1174.66, 987.77,
+      659.25, 783.99, 987.77, 1318.51, 1479.98, 1318.51, 1174.66, 987.77,
+    ],
+    bass: [
+      164.81, 164.81, 0, 164.81, 220.0, 220.0, 0, 220.0,
+      196.0, 196.0, 0, 196.0, 246.94, 246.94, 196.0, 0,
+    ],
+  },
+  'neon-dark': {
+    name: 'Cyberpunk Synthwave',
+    stepMs: 165,
+    leadType: 'sawtooth',
+    leadGain: 0.02,
+    leadDecay: 0.24,
+    bassType: 'sawtooth',
+    bassGain: 0.025,
+    bassDecay: 0.16,
+    lead: [
+      587.33, 0, 698.46, 0, 880.0, 0, 698.46, 659.25,
+      587.33, 0, 523.25, 0, 440.0, 523.25, 587.33, 0,
+    ],
+    bass: [
+      146.83, 146.83, 293.66, 146.83, 116.54, 116.54, 233.08, 116.54,
+      130.81, 130.81, 261.63, 130.81, 110.0, 110.0, 220.0, 138.59,
+    ],
+  },
 };
 
 /* ==========================================================================
@@ -52,6 +129,11 @@ class SoundEngine {
     this.ctx = null;
     const savedSound = localStorage.getItem(STORAGE_KEYS.SOUND);
     this.enabled = savedSound !== null ? savedSound === 'true' : true;
+    const savedMusic = localStorage.getItem(STORAGE_KEYS.MUSIC);
+    this.musicEnabled = savedMusic !== null ? savedMusic === 'true' : true;
+    this.currentTheme = 'light';
+    this.musicTimer = null;
+    this.musicStep = 0;
   }
 
   initContext() {
@@ -64,6 +146,9 @@ class SoundEngine {
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
+    if (this.musicEnabled && !this.musicTimer) {
+      this.startMusicLoop();
+    }
   }
 
   toggle() {
@@ -73,6 +158,105 @@ class SoundEngine {
       this.playSlide();
     }
     return this.enabled;
+  }
+
+  toggleMusic() {
+    this.musicEnabled = !this.musicEnabled;
+    localStorage.setItem(STORAGE_KEYS.MUSIC, String(this.musicEnabled));
+    if (this.musicEnabled) {
+      this.initContext();
+      this.startMusicLoop();
+    } else {
+      this.stopMusicLoop();
+    }
+    return this.musicEnabled;
+  }
+
+  setMusicTheme(theme) {
+    const nextTheme = THEME_MUSIC[theme] ? theme : 'light';
+    const changed = this.currentTheme !== nextTheme;
+    this.currentTheme = nextTheme;
+    if (this.musicEnabled && this.musicTimer && changed) {
+      this.musicStep = 0;
+      this.startMusicLoop();
+    }
+  }
+
+  startMusicLoop() {
+    this.stopMusicLoop();
+    if (!this.musicEnabled) return;
+    const track = THEME_MUSIC[this.currentTheme] || THEME_MUSIC.light;
+    this.musicTimer = setInterval(() => {
+      this.playMusicStep();
+    }, track.stepMs);
+  }
+
+  stopMusicLoop() {
+    if (this.musicTimer) {
+      clearInterval(this.musicTimer);
+      this.musicTimer = null;
+    }
+  }
+
+  playMusicStep() {
+    if (!this.musicEnabled || !this.ctx || this.ctx.state !== 'running') return;
+    const track = THEME_MUSIC[this.currentTheme] || THEME_MUSIC.light;
+    const stepIdx = this.musicStep % track.lead.length;
+    this.musicStep++;
+
+    const now = this.ctx.currentTime;
+    const leadFreq = track.lead[stepIdx];
+    const bassFreq = track.bass[stepIdx % track.bass.length];
+
+    if (leadFreq > 0) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = track.leadType;
+      osc.frequency.setValueAtTime(leadFreq, now);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(track.leadGain, now + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + track.leadDecay);
+
+      if (this.currentTheme === 'neon-dark') {
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1650, now);
+        osc.connect(filter);
+        filter.connect(gain);
+      } else {
+        osc.connect(gain);
+      }
+
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + track.leadDecay + 0.02);
+    }
+
+    if (bassFreq > 0) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = track.bassType;
+      osc.frequency.setValueAtTime(bassFreq, now);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(track.bassGain, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + track.bassDecay);
+
+      if (this.currentTheme === 'neon-dark' || this.currentTheme === 'neon-light') {
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(520, now);
+        osc.connect(filter);
+        filter.connect(gain);
+      } else {
+        osc.connect(gain);
+      }
+
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + track.bassDecay + 0.02);
+    }
   }
 
   playSlide() {
@@ -299,6 +483,7 @@ class Game8192 {
     this.doubleCountEl = document.getElementById('double-count');
     this.newGameBtn = document.getElementById('new-game-btn');
     this.soundToggleBtn = document.getElementById('sound-toggle');
+    this.musicToggleBtn = document.getElementById('music-toggle');
     this.themeToggleBtn = document.getElementById('theme-toggle');
     this.guideBtn = document.getElementById('guide-btn');
     this.guideModal = document.getElementById('guide-modal');
@@ -351,6 +536,7 @@ class Game8192 {
 
     this.initTheme();
     this.updateSoundUI();
+    this.updateMusicUI();
     this.updateSizeButtonsUI();
     this.bindEvents();
     this.switchGridSize(this.size, false);
@@ -424,6 +610,7 @@ class Game8192 {
     const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
     const theme = THEMES.includes(savedTheme) ? savedTheme : 'light';
     document.documentElement.setAttribute('data-theme', theme);
+    this.sound.setMusicTheme(theme);
     this.updateThemeUI(theme);
   }
 
@@ -433,6 +620,8 @@ class Game8192 {
     const next = THEMES[(currentIndex + 1) % THEMES.length];
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem(STORAGE_KEYS.THEME, next);
+    this.sound.initContext();
+    this.sound.setMusicTheme(next);
     this.updateThemeUI(next);
   }
 
@@ -453,6 +642,19 @@ class Game8192 {
     const onIcon = this.soundToggleBtn.querySelector('.sound-on-icon');
     const offIcon = this.soundToggleBtn.querySelector('.sound-off-icon');
     if (this.sound.enabled) {
+      onIcon.classList.remove('hidden');
+      offIcon.classList.add('hidden');
+    } else {
+      onIcon.classList.add('hidden');
+      offIcon.classList.remove('hidden');
+    }
+  }
+
+  updateMusicUI() {
+    if (!this.musicToggleBtn) return;
+    const onIcon = this.musicToggleBtn.querySelector('.music-on-icon');
+    const offIcon = this.musicToggleBtn.querySelector('.music-off-icon');
+    if (this.sound.musicEnabled) {
       onIcon.classList.remove('hidden');
       offIcon.classList.add('hidden');
     } else {
@@ -1623,6 +1825,24 @@ class Game8192 {
       this.updateSoundUI();
     });
 
+    if (this.musicToggleBtn) {
+      this.musicToggleBtn.addEventListener('click', () => {
+        const enabled = this.sound.toggleMusic();
+        this.updateMusicUI();
+        const track = THEME_MUSIC[this.sound.currentTheme] || THEME_MUSIC.light;
+        this.showToast(enabled ? `🎵 Music On: ${track.name}` : '🔇 Music Muted');
+      });
+    }
+
+    // Unlock Web Audio context on first pointer or key interaction so background music starts automatically
+    const unlockAudioOnce = () => {
+      this.sound.initContext();
+      window.removeEventListener('pointerdown', unlockAudioOnce);
+      window.removeEventListener('keydown', unlockAudioOnce);
+    };
+    window.addEventListener('pointerdown', unlockAudioOnce, { once: true });
+    window.addEventListener('keydown', unlockAudioOnce, { once: true });
+
     this.themeToggleBtn.addEventListener('click', () => {
       this.toggleTheme();
     });
@@ -1717,6 +1937,12 @@ class Game8192 {
       } else if (e.code === 'KeyV') {
         e.preventDefault();
         this.toggleDoubleMode();
+      } else if (e.code === 'KeyM') {
+        e.preventDefault();
+        const enabled = this.sound.toggleMusic();
+        this.updateMusicUI();
+        const track = THEME_MUSIC[this.sound.currentTheme] || THEME_MUSIC.light;
+        this.showToast(enabled ? `🎵 Music On: ${track.name}` : '🔇 Music Muted');
       } else if (e.code === 'KeyG') {
         e.preventDefault();
         if (this.guideModal) {
