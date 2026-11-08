@@ -828,6 +828,12 @@ body {
    Tile Palette: Warm Classic (2 - 1024) + Vibrant High-Tier Glow (2048 - 8192+)
    ========================================================================== */
 
+.tile-1 .tile-inner {
+  background: #f5efe6;
+  color: #776e65;
+  border: 1.5px dashed rgba(119, 110, 101, 0.45);
+}
+
 .tile-2 .tile-inner {
   background: #eee4da;
   color: #776e65;
@@ -910,6 +916,11 @@ body {
 }
 
 /* Dark theme subtle tweak for low tiles so they look crisp against dark board */
+[data-theme="dark"] .tile-1 .tile-inner {
+  background: #f0ece4;
+  color: #3f3a34;
+  border: 1.5px dashed rgba(63, 58, 52, 0.45);
+}
 [data-theme="dark"] .tile-2 .tile-inner {
   background: #e4ded5;
   color: #3f3a34;
@@ -924,6 +935,12 @@ body {
    ========================================================================== */
 [data-theme="neon-light"] .board-container {
   border: 2px solid #d946ef;
+}
+[data-theme="neon-light"] .tile-1 .tile-inner {
+  background: #fdf4ff;
+  color: #a21caf;
+  border: 1.5px dashed #e879f9;
+  box-shadow: 0 0 8px rgba(232, 121, 249, 0.25);
 }
 [data-theme="neon-light"] .tile-2 .tile-inner {
   background: #fae8ff;
@@ -993,6 +1010,12 @@ body {
 }
 [data-theme="neon-dark"] .score-addition {
   color: #22d3ee;
+}
+[data-theme="neon-dark"] .tile-1 .tile-inner {
+  background: #090d16;
+  color: #67e8f9;
+  border: 1.5px dashed #22d3ee;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.35), inset 0 0 6px rgba(34, 211, 238, 0.15);
 }
 [data-theme="neon-dark"] .tile-2 .tile-inner {
   background: #0f172a;

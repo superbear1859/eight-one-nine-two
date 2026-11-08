@@ -547,8 +547,8 @@ class Game8192 {
     this.keepPlaying = false;
     this.over = false;
 
-    this.spawnRandomTile();
-    this.spawnRandomTile();
+    this.spawnRandomTile(1);
+    this.spawnRandomTile(1);
     this.updateBestFromGrid();
 
     this.saveState();
@@ -665,12 +665,25 @@ class Game8192 {
     return cells;
   }
 
-  spawnRandomTile() {
+  hasUnmergedOnes() {
+    let oneCount = 0;
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        if (this.grid[r] && this.grid[r][c] && this.grid[r][c].value === 1) {
+          oneCount++;
+        }
+      }
+    }
+    return oneCount >= 2;
+  }
+
+  spawnRandomTile(forcedValue = null) {
     const empty = this.getEmptyCells();
     if (empty.length === 0) return null;
 
     const { r, c } = empty[Math.floor(Math.random() * empty.length)];
-    const value = Math.random() < 0.9 ? 2 : 4;
+    const value =
+      typeof forcedValue === 'number' ? forcedValue : Math.random() < 0.9 ? 2 : 4;
 
     const tile = {
       id: this.nextTileId++,
@@ -877,8 +890,10 @@ class Game8192 {
       }
     }
 
-    // Spawn new tile and update Best Block for this grid size
-    this.spawnRandomTile();
+    // Spawn new tile only once the starting two 1s have been put together
+    if (!this.hasUnmergedOnes()) {
+      this.spawnRandomTile();
+    }
     this.updateBestFromGrid();
 
     // Check if reaching the target tile on this grid unlocks the next grid size
