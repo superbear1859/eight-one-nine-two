@@ -78,6 +78,16 @@
           <span class="undo-badge swap-badge" id="swap-count">2</span>
         </button>
 
+        <button type="button" class="action-btn double-btn" id="double-btn" title="Double any tile on the board (V)">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m18 15-6-6-6 6"></path>
+            <path d="m18 9-6-6-6 6"></path>
+            <line x1="12" y1="3" x2="12" y2="21"></line>
+          </svg>
+          <span>Double</span>
+          <span class="undo-badge double-badge" id="double-count">2</span>
+        </button>
+
         <button type="button" class="icon-btn" id="sound-toggle" title="Toggle Sound Effects" aria-label="Toggle Sound Effects">
           <svg class="icon sound-on-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -123,6 +133,14 @@
           <span>Guide</span>
         </button>
 
+        <button type="button" class="icon-btn secret-btn" id="secret-btn" title="Enter Secret Password" aria-label="Enter Secret Password">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="7.5" cy="15.5" r="5.5"></circle>
+            <path d="m21 2-9.6 9.6"></path>
+            <path d="m15.5 7.5 3 3L22 7l-3-3"></path>
+          </svg>
+        </button>
+
         <button type="button" class="action-btn new-game-btn" id="new-game-btn" title="Start a new game (N)">
           New Game
         </button>
@@ -148,6 +166,7 @@
               <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-undo-btn">Undo Last Move</button>
               <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-smash-btn">Smash a Tile</button>
               <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-swap-btn">Swap Two Tiles</button>
+              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-double-btn">Double a Tile</button>
               <button type="button" class="overlay-btn primary-btn" id="try-again-btn">Play Again</button>
             </div>
           </div>
@@ -164,7 +183,7 @@
         <strong>PROGRESSION:</strong> Reach <strong>128</strong> on <strong>4×4</strong> to unlock <strong>5×5</strong>, <strong>256</strong> on <strong>5×5</strong> to unlock <strong>6×6</strong>, <strong>512</strong> on <strong>6×6</strong> to unlock <strong>7×7</strong>, and so on (up to <strong>4096</strong> on <strong>9×9</strong> to unlock <strong>10×10</strong>)!
       </p>
       <p class="undo-rules">
-        <strong>POWER-UPS:</strong> Start with <strong>3 Undos</strong> (max 5), <strong>2 Smashes</strong> (max 3), and <strong>2 Swaps</strong> (max 3). Click <strong>Smash</strong> (<code>X</code>) to destroy any tile, or click <strong>Swap</strong> (<code>C</code>) and select two tiles to swap their positions! Earn <strong>+1 Undo</strong> on every new block (<strong>8+</strong>) and <strong>+1 Smash &amp; +1 Swap</strong> on major milestone blocks (<strong>128+</strong>).
+        <strong>POWER-UPS:</strong> Start with <strong>3 Undos</strong> (max 5), <strong>2 Smashes</strong> (max 3), <strong>2 Swaps</strong> (max 3), and <strong>2 Doubles</strong> (max 3). Click <strong>Smash</strong> (<code>X</code>) to destroy any tile, <strong>Swap</strong> (<code>C</code>) to swap two tiles, or <strong>Double</strong> (<code>V</code>) to 2× any tile! Earn <strong>+1 Undo</strong> on every new block (<strong>8+</strong>) and <strong>+1 Smash, +1 Swap &amp; +1 Double</strong> on major milestone blocks (<strong>128+</strong>).
       </p>
     </footer>
   </div>
@@ -228,12 +247,13 @@
         </section>
 
         <section class="guide-section">
-          <h3>3. Mastering Smash, Swap &amp; Undo Power-Ups</h3>
+          <h3>3. Mastering Smash, Swap, Double &amp; Undo Power-Ups</h3>
           <ul>
             <li><strong>Clear Trapped Low Tiles with Smash (<code>X</code>):</strong> The #1 cause of losing a corner chain is a stray <strong>2</strong> or <strong>4</strong> getting wedged between two giant blocks (like a <code>4</code> stuck between <code>2048</code> and <code>1024</code>). Press <strong>X</strong> and smash the trapped small tile so the big tiles can slide together!</li>
             <li><strong>Repair Your Snake Chain with Swap (<code>C</code>):</strong> If your highest tile gets pulled out of your corner or two matching high tiles are stuck on opposite sides of the board, press <strong>C</strong> and click both tiles to swap their places immediately!</li>
+            <li><strong>Instant Upgrade with Double (<code>V</code>):</strong> Press <strong>V</strong> and click any tile on the board to double its value (`2×`) in place! Use it to instantly promote your second-highest tile so it merges into your corner anchor, or upgrade a trapped low tile so it matches its neighbor.</li>
             <li><strong>Undo Bad Spawns (<code>U</code> / <code>Backspace</code>):</strong> If you are forced to swipe away from your anchor wall and a new <code>2</code> spawns right in your corner, hit <strong>Undo</strong> immediately and try a different merge or power-up first.</li>
-            <li><strong>Farm Milestones Without Wasting Caps:</strong> You hold up to <strong>5 Undos</strong>, <strong>3 Smashes</strong>, and <strong>3 Swaps</strong>. Every new merged tile (<code>8+</code>) grants <strong>+1 Undo</strong>, and every major milestone (<code>128</code>, <code>256</code>, <code>512</code>, …) grants <strong>+1 Smash &amp; +1 Swap</strong>. Spend a power-up before hitting a milestone if your charges are already full!</li>
+            <li><strong>Farm Milestones Without Wasting Caps:</strong> You hold up to <strong>5 Undos</strong>, <strong>3 Smashes</strong>, <strong>3 Swaps</strong>, and <strong>3 Doubles</strong>. Every new merged tile (<code>8+</code>) grants <strong>+1 Undo</strong>, and every major milestone (<code>128</code>, <code>256</code>, <code>512</code>, …) grants <strong>+1 Smash, +1 Swap &amp; +1 Double</strong>. Spend a power-up before hitting a milestone if your charges are already full!</li>
           </ul>
         </section>
 
@@ -259,12 +279,45 @@
             <div><kbd>U</kbd> or <kbd>Backspace</kbd> — Undo Move</div>
             <div><kbd>X</kbd> — Toggle Smash Mode</div>
             <div><kbd>C</kbd> — Toggle Swap Mode</div>
+            <div><kbd>V</kbd> — Toggle Double Mode</div>
             <div><kbd>G</kbd> — Open / Close Guide Book</div>
             <div><kbd>N</kbd> — Start New Game</div>
             <div><kbd>Esc</kbd> — Cancel Power-Up / Close Guide</div>
           </div>
         </section>
       </div>
+    </div>
+  </div>
+
+  <!-- Secret Password Modal -->
+  <div class="guide-modal-backdrop hidden" id="secret-modal" role="dialog" aria-modal="true" aria-labelledby="secret-modal-title">
+    <div class="guide-modal-card secret-modal-card">
+      <header class="guide-modal-header">
+        <div class="guide-header-title">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="7.5" cy="15.5" r="5.5"></circle>
+            <path d="m21 2-9.6 9.6"></path>
+            <path d="m15.5 7.5 3 3L22 7l-3-3"></path>
+          </svg>
+          <h2 id="secret-modal-title">Secret Password</h2>
+        </div>
+        <button type="button" class="guide-close-btn" id="secret-close-btn" aria-label="Close Secret Password Modal">✕</button>
+      </header>
+
+      <form class="secret-modal-body" id="secret-form">
+        <label for="secret-input" class="secret-label">Enter secret code to unlock hidden power-ups:</label>
+        <div class="secret-input-row">
+          <input
+            type="password"
+            id="secret-input"
+            class="secret-input"
+            placeholder="Enter password..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="submit" class="action-btn new-game-btn secret-submit-btn">Unlock</button>
+        </div>
+      </form>
     </div>
   </div>
 

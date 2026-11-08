@@ -17,10 +17,15 @@ const INITIAL_SMASHES = 2;
 const MAX_SMASHES = 3;
 const INITIAL_SWAPS = 2;
 const MAX_SWAPS = 3;
-const MAX_HISTORY_LENGTH = 10;
+const INITIAL_DOUBLES = 2;
+const MAX_DOUBLES = 3;
+const MAX_HISTORY_LENGTH = 100;
+const SECRET_PASSWORD = 'superbearthegreat';
+const SECRET_POWERUP_AMOUNT = 100;
 const MILESTONE_TILES = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 const SMASH_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 const SWAP_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
+const DOUBLE_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 
 const THEMES = ['light', 'dark', 'neon-light', 'neon-dark'];
 const THEME_LABELS = {
@@ -192,6 +197,32 @@ class SoundEngine {
     });
   }
 
+  playDouble() {
+    if (!this.enabled) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const notes = [440, 880]; // A4 -> A5 octave power-up chime
+    notes.forEach((freq, idx) => {
+      const now = this.ctx.currentTime + idx * 0.06;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.12, now + 0.11);
+
+      gain.gain.setValueAtTime(0.11, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.125);
+    });
+  }
+
   playMilestone() {
     if (!this.enabled) return;
     this.initContext();
@@ -264,12 +295,19 @@ class Game8192 {
     this.smashCountEl = document.getElementById('smash-count');
     this.swapBtn = document.getElementById('swap-btn');
     this.swapCountEl = document.getElementById('swap-count');
+    this.doubleBtn = document.getElementById('double-btn');
+    this.doubleCountEl = document.getElementById('double-count');
     this.newGameBtn = document.getElementById('new-game-btn');
     this.soundToggleBtn = document.getElementById('sound-toggle');
     this.themeToggleBtn = document.getElementById('theme-toggle');
     this.guideBtn = document.getElementById('guide-btn');
     this.guideModal = document.getElementById('guide-modal');
     this.guideCloseBtn = document.getElementById('guide-close-btn');
+    this.secretBtn = document.getElementById('secret-btn');
+    this.secretModal = document.getElementById('secret-modal');
+    this.secretCloseBtn = document.getElementById('secret-close-btn');
+    this.secretForm = document.getElementById('secret-form');
+    this.secretInput = document.getElementById('secret-input');
     this.toastContainer = document.getElementById('toast-container');
 
     // Overlay Elements
@@ -280,6 +318,7 @@ class Game8192 {
     this.overlayUndoBtn = document.getElementById('overlay-undo-btn');
     this.overlaySmashBtn = document.getElementById('overlay-smash-btn');
     this.overlaySwapBtn = document.getElementById('overlay-swap-btn');
+    this.overlayDoubleBtn = document.getElementById('overlay-double-btn');
     this.tryAgainBtn = document.getElementById('try-again-btn');
 
     this.sizeButtons = Array.from(document.querySelectorAll('.size-btn'));
@@ -298,8 +337,11 @@ class Game8192 {
     this.undosRemaining = INITIAL_UNDOS;
     this.smashesRemaining = INITIAL_SMASHES;
     this.swapsRemaining = INITIAL_SWAPS;
+    this.doublesRemaining = INITIAL_DOUBLES;
+    this.powerupCapBroken = false;
     this.smashMode = false;
     this.swapMode = false;
+    this.doubleMode = false;
     this.swapFirstTile = null;
     this.unlockedMilestones = [];
     this.history = [];
@@ -433,6 +475,7 @@ class Game8192 {
 
     this.setSmashMode(false);
     this.setSwapMode(false);
+    this.setDoubleMode(false);
     if (saveCurrentFirst && this.grid.length > 0) {
       this.saveState();
     }
@@ -490,11 +533,14 @@ class Game8192 {
   startNewGame() {
     this.setSmashMode(false);
     this.setSwapMode(false);
+    this.setDoubleMode(false);
     this.grid = Array.from({ length: this.size }, () => Array(this.size).fill(null));
     this.score = 0;
     this.undosRemaining = INITIAL_UNDOS;
     this.smashesRemaining = INITIAL_SMASHES;
     this.swapsRemaining = INITIAL_SWAPS;
+    this.doublesRemaining = INITIAL_DOUBLES;
+    this.powerupCapBroken = false;
     this.unlockedMilestones = [];
     this.history = [];
     this.won = false;
@@ -530,6 +576,8 @@ class Game8192 {
       undosRemaining: this.undosRemaining,
       smashesRemaining: this.smashesRemaining,
       swapsRemaining: this.swapsRemaining,
+      doublesRemaining: this.doublesRemaining,
+      powerupCapBroken: this.powerupCapBroken,
       unlockedMilestones: this.unlockedMilestones,
       history: serializedHistory,
       won: this.won,
@@ -574,6 +622,14 @@ class Game8192 {
         typeof data.smashesRemaining === 'number' ? data.smashesRemaining : INITIAL_SMASHES;
       this.swapsRemaining =
         typeof data.swapsRemaining === 'number' ? data.swapsRemaining : INITIAL_SWAPS;
+      this.doublesRemaining =
+        typeof data.doublesRemaining === 'number' ? data.doublesRemaining : INITIAL_DOUBLES;
+      this.powerupCapBroken =
+        Boolean(data.powerupCapBroken) ||
+        this.undosRemaining > MAX_UNDOS ||
+        this.smashesRemaining > MAX_SMASHES ||
+        this.swapsRemaining > MAX_SWAPS ||
+        this.doublesRemaining > MAX_DOUBLES;
       this.unlockedMilestones = Array.isArray(data.unlockedMilestones)
         ? data.unlockedMilestones
         : [];
@@ -640,6 +696,9 @@ class Game8192 {
     }
     if (this.swapMode) {
       this.setSwapMode(false);
+    }
+    if (this.doubleMode) {
+      this.setDoubleMode(false);
     }
 
     const vectors = {
@@ -770,30 +829,41 @@ class Game8192 {
       if (MILESTONE_TILES.includes(val) && !this.unlockedMilestones.includes(val)) {
         this.unlockedMilestones.push(val);
 
-        const gainedUndo = this.undosRemaining < MAX_UNDOS;
+        const gainedUndo = this.powerupCapBroken || this.undosRemaining < MAX_UNDOS;
         if (gainedUndo) {
           this.undosRemaining++;
           this.pulseUndoBadge();
         }
 
         const isSmashMilestone = SMASH_MILESTONE_TILES.includes(val);
-        const gainedSmash = isSmashMilestone && this.smashesRemaining < MAX_SMASHES;
+        const gainedSmash =
+          isSmashMilestone && (this.powerupCapBroken || this.smashesRemaining < MAX_SMASHES);
         if (gainedSmash) {
           this.smashesRemaining++;
           this.pulseSmashBadge();
         }
 
         const isSwapMilestone = SWAP_MILESTONE_TILES.includes(val);
-        const gainedSwap = isSwapMilestone && this.swapsRemaining < MAX_SWAPS;
+        const gainedSwap =
+          isSwapMilestone && (this.powerupCapBroken || this.swapsRemaining < MAX_SWAPS);
         if (gainedSwap) {
           this.swapsRemaining++;
           this.pulseSwapBadge();
+        }
+
+        const isDoubleMilestone = DOUBLE_MILESTONE_TILES.includes(val);
+        const gainedDouble =
+          isDoubleMilestone && (this.powerupCapBroken || this.doublesRemaining < MAX_DOUBLES);
+        if (gainedDouble) {
+          this.doublesRemaining++;
+          this.pulseDoubleBadge();
         }
 
         const rewards = [];
         if (gainedUndo) rewards.push('+1 Undo');
         if (gainedSmash) rewards.push('+1 Smash');
         if (gainedSwap) rewards.push('+1 Swap');
+        if (gainedDouble) rewards.push('+1 Double');
 
         if (rewards.length > 0) {
           earnedPowerup = true;
@@ -861,6 +931,9 @@ class Game8192 {
     if (active && this.swapMode) {
       this.setSwapMode(false);
     }
+    if (active && this.doubleMode) {
+      this.setDoubleMode(false);
+    }
     this.smashMode = Boolean(active);
     this.boardContainer.classList.toggle('smash-mode', this.smashMode);
     if (this.smashBtn) {
@@ -879,6 +952,33 @@ class Game8192 {
     this.setSmashMode(!this.smashMode);
   }
 
+  setDoubleMode(active) {
+    if (active && (this.doublesRemaining <= 0 || this.getTileCount() < 1)) {
+      return;
+    }
+    if (active && this.smashMode) {
+      this.setSmashMode(false);
+    }
+    if (active && this.swapMode) {
+      this.setSwapMode(false);
+    }
+    this.doubleMode = Boolean(active);
+    this.boardContainer.classList.toggle('double-mode', this.doubleMode);
+    if (this.doubleBtn) {
+      this.doubleBtn.classList.toggle('active', this.doubleMode);
+    }
+    if (this.doubleMode) {
+      this.overlay.classList.add('hidden');
+      this.showToast('Double Mode: Click any tile on the board to 2× its value!');
+    } else {
+      this.updateUI();
+    }
+  }
+
+  toggleDoubleMode() {
+    this.setDoubleMode(!this.doubleMode);
+  }
+
   clearSwapSelectionHighlight() {
     Array.from(this.tileContainer.querySelectorAll('.swap-selected')).forEach((el) => {
       el.classList.remove('swap-selected');
@@ -891,6 +991,9 @@ class Game8192 {
     }
     if (active && this.smashMode) {
       this.setSmashMode(false);
+    }
+    if (active && this.doubleMode) {
+      this.setDoubleMode(false);
     }
     this.swapMode = Boolean(active);
     this.swapFirstTile = null;
@@ -1039,11 +1142,139 @@ class Game8192 {
     }, 150);
   }
 
+  doubleTileAt(r, c) {
+    if (!this.doubleMode || this.doublesRemaining <= 0) return;
+    const targetTile = this.grid[r] && this.grid[r][c];
+    if (!targetTile) return;
+
+    // Save snapshot so Undo can revert a Double if desired
+    const preDoubleSnapshot = {
+      grid: this.serializeGridValues(),
+      score: this.score,
+      unlockedMilestones: [...this.unlockedMilestones],
+      won: this.won,
+      keepPlaying: this.keepPlaying,
+    };
+    this.history.push(preDoubleSnapshot);
+    if (this.history.length > MAX_HISTORY_LENGTH) {
+      this.history.shift();
+    }
+
+    // Clear previous animation flags
+    for (let row = 0; row < this.size; row++) {
+      for (let col = 0; col < this.size; col++) {
+        const t = this.grid[row][col];
+        if (t) {
+          t.isNew = false;
+          t.mergedFrom = null;
+        }
+      }
+    }
+
+    const newVal = targetTile.value * 2;
+    targetTile.value = newVal;
+    targetTile.mergedFrom = []; // Triggers pop animation without ghost tiles
+
+    this.doublesRemaining--;
+    this.score += newVal;
+    this.triggerScoreAddition(newVal);
+    this.over = false;
+
+    let justWon = false;
+    let earnedPowerup = false;
+
+    if (newVal >= WIN_TARGET && !this.won) {
+      this.won = true;
+      justWon = true;
+    }
+
+    if (MILESTONE_TILES.includes(newVal) && !this.unlockedMilestones.includes(newVal)) {
+      this.unlockedMilestones.push(newVal);
+
+      const gainedUndo = this.powerupCapBroken || this.undosRemaining < MAX_UNDOS;
+      if (gainedUndo) {
+        this.undosRemaining++;
+        this.pulseUndoBadge();
+      }
+
+      const isSmashMilestone = SMASH_MILESTONE_TILES.includes(newVal);
+      const gainedSmash =
+        isSmashMilestone && (this.powerupCapBroken || this.smashesRemaining < MAX_SMASHES);
+      if (gainedSmash) {
+        this.smashesRemaining++;
+        this.pulseSmashBadge();
+      }
+
+      const isSwapMilestone = SWAP_MILESTONE_TILES.includes(newVal);
+      const gainedSwap =
+        isSwapMilestone && (this.powerupCapBroken || this.swapsRemaining < MAX_SWAPS);
+      if (gainedSwap) {
+        this.swapsRemaining++;
+        this.pulseSwapBadge();
+      }
+
+      const isDoubleMilestone = DOUBLE_MILESTONE_TILES.includes(newVal);
+      const gainedDouble =
+        isDoubleMilestone && (this.powerupCapBroken || this.doublesRemaining < MAX_DOUBLES);
+      if (gainedDouble) {
+        this.doublesRemaining++;
+        this.pulseDoubleBadge();
+      }
+
+      const rewards = [];
+      if (gainedUndo) rewards.push('+1 Undo');
+      if (gainedSmash) rewards.push('+1 Smash');
+      if (gainedSwap) rewards.push('+1 Swap');
+      if (gainedDouble) rewards.push('+1 Double');
+
+      if (rewards.length > 0) {
+        earnedPowerup = true;
+        this.showToast(`New ${newVal} tile! ${rewards.join(' & ')}`);
+      } else {
+        this.showToast(`New ${newVal} tile unlocked!`);
+      }
+    }
+
+    this.updateBestFromGrid();
+
+    const unlockRequirement = getUnlockTargetForSize(this.size);
+    if (
+      this.bestScore >= unlockRequirement &&
+      this.size < 10 &&
+      this.maxUnlockedSize === this.size
+    ) {
+      this.maxUnlockedSize = this.size + 1;
+      localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, String(this.maxUnlockedSize));
+      this.updateSizeButtonsUI(this.maxUnlockedSize);
+      earnedPowerup = true;
+      this.showToast(`🎉 ${this.maxUnlockedSize}×${this.maxUnlockedSize} Grid Unlocked!`);
+    }
+
+    if (justWon) {
+      this.sound.playWinFanfare();
+    } else if (earnedPowerup) {
+      this.sound.playMilestone();
+    } else {
+      this.sound.playDouble();
+    }
+
+    this.setDoubleMode(false);
+
+    if (!this.hasMovesAvailable()) {
+      this.over = true;
+    }
+
+    this.saveState();
+    this.renderBoard(false);
+    this.updateUI();
+  }
+
   undo() {
     if (this.undosRemaining <= 0 || this.history.length === 0) return;
 
     this.setSmashMode(false);
     this.setSwapMode(false);
+    this.setDoubleMode(false);
 
     const prev = this.history.pop();
     this.undosRemaining--;
@@ -1184,8 +1415,14 @@ class Game8192 {
       this.swapBtn.classList.toggle('active', this.swapMode);
     }
 
+    if (this.doubleCountEl && this.doubleBtn) {
+      this.doubleCountEl.textContent = String(this.doublesRemaining);
+      this.doubleBtn.disabled = this.doublesRemaining <= 0 || this.getTileCount() < 1;
+      this.doubleBtn.classList.toggle('active', this.doubleMode);
+    }
+
     // Overlay handling
-    if (this.smashMode || this.swapMode) {
+    if (this.smashMode || this.swapMode || this.doubleMode) {
       this.overlay.classList.add('hidden');
       return;
     }
@@ -1199,6 +1436,7 @@ class Game8192 {
       this.overlayUndoBtn.classList.add('hidden');
       if (this.overlaySmashBtn) this.overlaySmashBtn.classList.add('hidden');
       if (this.overlaySwapBtn) this.overlaySwapBtn.classList.add('hidden');
+      if (this.overlayDoubleBtn) this.overlayDoubleBtn.classList.add('hidden');
     } else if (this.over) {
       this.overlay.classList.remove('hidden');
       this.overlay.classList.remove('win-state');
@@ -1206,8 +1444,9 @@ class Game8192 {
       const canUndo = this.undosRemaining > 0 && this.history.length > 0;
       const canSmash = this.smashesRemaining > 0 && this.getTileCount() > 1;
       const canSwap = this.swapsRemaining > 0 && this.getTileCount() >= 2;
+      const canDouble = this.doublesRemaining > 0 && this.getTileCount() >= 1;
       this.overlayMessage.textContent =
-        canUndo || canSmash || canSwap
+        canUndo || canSmash || canSwap || canDouble
           ? 'No more moves—use a Power-Up or start fresh!'
           : 'No more moves available.';
       this.keepGoingBtn.classList.add('hidden');
@@ -1217,6 +1456,9 @@ class Game8192 {
       }
       if (this.overlaySwapBtn) {
         this.overlaySwapBtn.classList.toggle('hidden', !canSwap);
+      }
+      if (this.overlayDoubleBtn) {
+        this.overlayDoubleBtn.classList.toggle('hidden', !canDouble);
       }
     } else {
       this.overlay.classList.add('hidden');
@@ -1255,6 +1497,14 @@ class Game8192 {
     }, 450);
   }
 
+  pulseDoubleBadge() {
+    if (!this.doubleCountEl) return;
+    this.doubleCountEl.classList.add('pulse');
+    setTimeout(() => {
+      this.doubleCountEl.classList.remove('pulse');
+    }, 450);
+  }
+
   showToast(message) {
     this.toastContainer.innerHTML = '';
     const toast = document.createElement('div');
@@ -1266,6 +1516,53 @@ class Game8192 {
         toast.parentNode.removeChild(toast);
       }
     }, 2250);
+  }
+
+  openSecretModal() {
+    if (!this.secretModal) return;
+    this.setSmashMode(false);
+    this.setSwapMode(false);
+    this.setDoubleMode(false);
+    this.secretModal.classList.remove('hidden');
+    if (this.secretInput) {
+      this.secretInput.value = '';
+      setTimeout(() => this.secretInput.focus(), 20);
+    }
+  }
+
+  closeSecretModal() {
+    if (!this.secretModal) return;
+    this.secretModal.classList.add('hidden');
+    if (this.secretInput) {
+      this.secretInput.value = '';
+      this.secretInput.blur();
+    }
+  }
+
+  handleSecretPassword(rawPassword) {
+    const cleaned = String(rawPassword || '').trim().toLowerCase();
+    if (cleaned === SECRET_PASSWORD) {
+      this.powerupCapBroken = true;
+      this.undosRemaining = SECRET_POWERUP_AMOUNT;
+      this.smashesRemaining = SECRET_POWERUP_AMOUNT;
+      this.swapsRemaining = SECRET_POWERUP_AMOUNT;
+      this.doublesRemaining = SECRET_POWERUP_AMOUNT;
+
+      this.pulseUndoBadge();
+      this.pulseSmashBadge();
+      this.pulseSwapBadge();
+      this.pulseDoubleBadge();
+      this.sound.playWinFanfare();
+      this.saveState();
+      this.updateUI();
+      this.closeSecretModal();
+      this.showToast('🐻 SUPERBEAR UNLOCKED! 100 of every Power-Up!');
+    } else {
+      this.showToast('Wrong password!');
+      if (this.secretInput) {
+        this.secretInput.select();
+      }
+    }
   }
 
   /* ------------------------------------------------------------------------
@@ -1309,9 +1606,16 @@ class Game8192 {
       this.overlaySwapBtn.addEventListener('click', () => this.setSwapMode(true));
     }
 
-    // Click on a tile when Smash Mode or Swap Mode is active
+    if (this.doubleBtn) {
+      this.doubleBtn.addEventListener('click', () => this.toggleDoubleMode());
+    }
+    if (this.overlayDoubleBtn) {
+      this.overlayDoubleBtn.addEventListener('click', () => this.setDoubleMode(true));
+    }
+
+    // Click on a tile when Smash Mode, Swap Mode, or Double Mode is active
     this.tileContainer.addEventListener('click', (e) => {
-      if (!this.smashMode && !this.swapMode) return;
+      if (!this.smashMode && !this.swapMode && !this.doubleMode) return;
       const tileEl = e.target.closest('.tile');
       if (!tileEl) return;
       const r = parseInt(tileEl.getAttribute('data-row'), 10);
@@ -1322,6 +1626,8 @@ class Game8192 {
           this.smashTileAt(r, c);
         } else if (this.swapMode) {
           this.handleSwapTileClick(r, c);
+        } else if (this.doubleMode) {
+          this.doubleTileAt(r, c);
         }
       }
     });
@@ -1359,9 +1665,42 @@ class Game8192 {
       });
     }
 
-    // Keyboard Controls (Arrow keys, WASD, U/Backspace for Undo, X for Smash, G for Guide, Escape to cancel/close, N for New Game)
+    if (this.secretBtn) {
+      this.secretBtn.addEventListener('click', () => {
+        this.openSecretModal();
+      });
+    }
+    if (this.secretCloseBtn) {
+      this.secretCloseBtn.addEventListener('click', () => {
+        this.closeSecretModal();
+      });
+    }
+    if (this.secretModal) {
+      this.secretModal.addEventListener('click', (e) => {
+        if (e.target === this.secretModal) {
+          this.closeSecretModal();
+        }
+      });
+    }
+    if (this.secretForm) {
+      this.secretForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleSecretPassword(this.secretInput ? this.secretInput.value : '');
+      });
+    }
+
+    // Keyboard Controls (Arrow keys, WASD, U/Backspace for Undo, X for Smash, C for Swap, G for Guide, Escape to cancel/close, N for New Game)
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+      const isSecretOpen = this.secretModal && !this.secretModal.classList.contains('hidden');
+      if (isSecretOpen) {
+        if (e.code === 'Escape') {
+          e.preventDefault();
+          this.closeSecretModal();
+        }
+        return;
+      }
 
       const isGuideOpen = this.guideModal && !this.guideModal.classList.contains('hidden');
       if (isGuideOpen) {
@@ -1395,15 +1734,19 @@ class Game8192 {
       } else if (e.code === 'KeyC') {
         e.preventDefault();
         this.toggleSwapMode();
+      } else if (e.code === 'KeyV') {
+        e.preventDefault();
+        this.toggleDoubleMode();
       } else if (e.code === 'KeyG') {
         e.preventDefault();
         if (this.guideModal) {
           this.guideModal.classList.remove('hidden');
         }
-      } else if (e.code === 'Escape' && (this.smashMode || this.swapMode)) {
+      } else if (e.code === 'Escape' && (this.smashMode || this.swapMode || this.doubleMode)) {
         e.preventDefault();
         this.setSmashMode(false);
         this.setSwapMode(false);
+        this.setDoubleMode(false);
       } else if (e.code === 'KeyN') {
         e.preventDefault();
         this.startNewGame();
