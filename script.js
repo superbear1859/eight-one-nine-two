@@ -17,8 +17,8 @@ const INITIAL_SMASHES = 2;
 const MAX_SMASHES = 3;
 const INITIAL_SWAPS = 2;
 const MAX_SWAPS = 3;
-const INITIAL_DOUBLES = 2;
-const MAX_DOUBLES = 3;
+const INITIAL_DOUBLES = 1;
+const MAX_DOUBLES = 1;
 const MAX_HISTORY_LENGTH = 100;
 const SECRET_PASSWORD = 'superbearthegreat';
 const SECRET_POWERUP_AMOUNT = 100;
@@ -628,8 +628,10 @@ class Game8192 {
         Boolean(data.powerupCapBroken) ||
         this.undosRemaining > MAX_UNDOS ||
         this.smashesRemaining > MAX_SMASHES ||
-        this.swapsRemaining > MAX_SWAPS ||
-        this.doublesRemaining > MAX_DOUBLES;
+        this.swapsRemaining > MAX_SWAPS;
+      if (!this.powerupCapBroken && this.doublesRemaining > MAX_DOUBLES) {
+        this.doublesRemaining = MAX_DOUBLES;
+      }
       this.unlockedMilestones = Array.isArray(data.unlockedMilestones)
         ? data.unlockedMilestones
         : [];
@@ -1181,58 +1183,17 @@ class Game8192 {
     this.over = false;
 
     let justWon = false;
-    let earnedPowerup = false;
+    let unlockedNewGrid = false;
 
     if (newVal >= WIN_TARGET && !this.won) {
       this.won = true;
       justWon = true;
     }
 
+    // Using a power-up does not grant new power-up charges
     if (MILESTONE_TILES.includes(newVal) && !this.unlockedMilestones.includes(newVal)) {
       this.unlockedMilestones.push(newVal);
-
-      const gainedUndo = this.powerupCapBroken || this.undosRemaining < MAX_UNDOS;
-      if (gainedUndo) {
-        this.undosRemaining++;
-        this.pulseUndoBadge();
-      }
-
-      const isSmashMilestone = SMASH_MILESTONE_TILES.includes(newVal);
-      const gainedSmash =
-        isSmashMilestone && (this.powerupCapBroken || this.smashesRemaining < MAX_SMASHES);
-      if (gainedSmash) {
-        this.smashesRemaining++;
-        this.pulseSmashBadge();
-      }
-
-      const isSwapMilestone = SWAP_MILESTONE_TILES.includes(newVal);
-      const gainedSwap =
-        isSwapMilestone && (this.powerupCapBroken || this.swapsRemaining < MAX_SWAPS);
-      if (gainedSwap) {
-        this.swapsRemaining++;
-        this.pulseSwapBadge();
-      }
-
-      const isDoubleMilestone = DOUBLE_MILESTONE_TILES.includes(newVal);
-      const gainedDouble =
-        isDoubleMilestone && (this.powerupCapBroken || this.doublesRemaining < MAX_DOUBLES);
-      if (gainedDouble) {
-        this.doublesRemaining++;
-        this.pulseDoubleBadge();
-      }
-
-      const rewards = [];
-      if (gainedUndo) rewards.push('+1 Undo');
-      if (gainedSmash) rewards.push('+1 Smash');
-      if (gainedSwap) rewards.push('+1 Swap');
-      if (gainedDouble) rewards.push('+1 Double');
-
-      if (rewards.length > 0) {
-        earnedPowerup = true;
-        this.showToast(`New ${newVal} tile! ${rewards.join(' & ')}`);
-      } else {
-        this.showToast(`New ${newVal} tile unlocked!`);
-      }
+      this.showToast(`New ${newVal} tile unlocked!`);
     }
 
     this.updateBestFromGrid();
@@ -1246,13 +1207,13 @@ class Game8192 {
       this.maxUnlockedSize = this.size + 1;
       localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, String(this.maxUnlockedSize));
       this.updateSizeButtonsUI(this.maxUnlockedSize);
-      earnedPowerup = true;
+      unlockedNewGrid = true;
       this.showToast(`🎉 ${this.maxUnlockedSize}×${this.maxUnlockedSize} Grid Unlocked!`);
     }
 
     if (justWon) {
       this.sound.playWinFanfare();
-    } else if (earnedPowerup) {
+    } else if (unlockedNewGrid) {
       this.sound.playMilestone();
     } else {
       this.sound.playDouble();
