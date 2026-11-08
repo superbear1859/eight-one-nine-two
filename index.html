@@ -67,6 +67,17 @@
           <span class="undo-badge smash-badge" id="smash-count">2</span>
         </button>
 
+        <button type="button" class="action-btn swap-btn" id="swap-btn" title="Swap any two tiles on the board (C)">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m16 3 4 4-4 4"></path>
+            <path d="M20 7H4"></path>
+            <path d="m8 21-4-4 4-4"></path>
+            <path d="M4 17h16"></path>
+          </svg>
+          <span>Swap</span>
+          <span class="undo-badge swap-badge" id="swap-count">2</span>
+        </button>
+
         <button type="button" class="icon-btn" id="sound-toggle" title="Toggle Sound Effects" aria-label="Toggle Sound Effects">
           <svg class="icon sound-on-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -136,6 +147,7 @@
               <button type="button" class="overlay-btn primary-btn hidden" id="keep-going-btn">Keep Going</button>
               <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-undo-btn">Undo Last Move</button>
               <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-smash-btn">Smash a Tile</button>
+              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-swap-btn">Swap Two Tiles</button>
               <button type="button" class="overlay-btn primary-btn" id="try-again-btn">Play Again</button>
             </div>
           </div>
@@ -152,7 +164,7 @@
         <strong>PROGRESSION:</strong> Reach <strong>128</strong> on <strong>4×4</strong> to unlock <strong>5×5</strong>, <strong>256</strong> on <strong>5×5</strong> to unlock <strong>6×6</strong>, <strong>512</strong> on <strong>6×6</strong> to unlock <strong>7×7</strong>, and so on (up to <strong>4096</strong> on <strong>9×9</strong> to unlock <strong>10×10</strong>)!
       </p>
       <p class="undo-rules">
-        <strong>POWER-UPS:</strong> Start with <strong>3 Undos</strong> (max 5) and <strong>2 Smashes</strong> (max 3). Click <strong>Smash</strong> (or press <strong>X</strong>) and click any tile on the board to destroy it! Earn <strong>+1 Undo</strong> on every new merged block (<strong>8+</strong>) and <strong>+1 Smash</strong> on major milestone blocks (<strong>128</strong>, <strong>256</strong>, <strong>512</strong>, <strong>1024+</strong>).
+        <strong>POWER-UPS:</strong> Start with <strong>3 Undos</strong> (max 5), <strong>2 Smashes</strong> (max 3), and <strong>2 Swaps</strong> (max 3). Click <strong>Smash</strong> (<code>X</code>) to destroy any tile, or click <strong>Swap</strong> (<code>C</code>) and select two tiles to swap their positions! Earn <strong>+1 Undo</strong> on every new block (<strong>8+</strong>) and <strong>+1 Smash &amp; +1 Swap</strong> on major milestone blocks (<strong>128+</strong>).
       </p>
     </footer>
   </div>
@@ -216,11 +228,12 @@
         </section>
 
         <section class="guide-section">
-          <h3>3. Mastering Smash &amp; Undo Power-Ups</h3>
+          <h3>3. Mastering Smash, Swap &amp; Undo Power-Ups</h3>
           <ul>
-            <li><strong>Clear Trapped Low Tiles with Smash (<code>X</code>):</strong> The #1 cause of losing a corner chain is a stray <strong>2</strong> or <strong>4</strong> getting wedged between two giant blocks (like a <code>4</code> stuck between <code>2048</code> and <code>1024</code>). Instead of scrambling your board, press <strong>X</strong> and smash the trapped small tile so the big tiles can slide together!</li>
-            <li><strong>Undo Bad Spawns (<code>U</code> / <code>Backspace</code>):</strong> If you are forced to swipe away from your anchor wall and a new <code>2</code> spawns right in your corner, hit <strong>Undo</strong> immediately and try a different merge or use <strong>Smash</strong> first.</li>
-            <li><strong>Farm Milestones Without Wasting Caps:</strong> You hold up to <strong>5 Undos</strong> and <strong>3 Smashes</strong>. Every new merged tile (<code>8</code>, <code>16</code>, <code>32</code>, …) grants <strong>+1 Undo</strong>, and every major milestone (<code>128</code>, <code>256</code>, <code>512</code>, …) grants <strong>+1 Smash</strong>. If you are at max capacity and about to merge a new milestone block, don't be afraid to spend a Smash to clean up your board first!</li>
+            <li><strong>Clear Trapped Low Tiles with Smash (<code>X</code>):</strong> The #1 cause of losing a corner chain is a stray <strong>2</strong> or <strong>4</strong> getting wedged between two giant blocks (like a <code>4</code> stuck between <code>2048</code> and <code>1024</code>). Press <strong>X</strong> and smash the trapped small tile so the big tiles can slide together!</li>
+            <li><strong>Repair Your Snake Chain with Swap (<code>C</code>):</strong> If your highest tile gets pulled out of your corner or two matching high tiles are stuck on opposite sides of the board, press <strong>C</strong> and click both tiles to swap their places immediately!</li>
+            <li><strong>Undo Bad Spawns (<code>U</code> / <code>Backspace</code>):</strong> If you are forced to swipe away from your anchor wall and a new <code>2</code> spawns right in your corner, hit <strong>Undo</strong> immediately and try a different merge or power-up first.</li>
+            <li><strong>Farm Milestones Without Wasting Caps:</strong> You hold up to <strong>5 Undos</strong>, <strong>3 Smashes</strong>, and <strong>3 Swaps</strong>. Every new merged tile (<code>8+</code>) grants <strong>+1 Undo</strong>, and every major milestone (<code>128</code>, <code>256</code>, <code>512</code>, …) grants <strong>+1 Smash &amp; +1 Swap</strong>. Spend a power-up before hitting a milestone if your charges are already full!</li>
           </ul>
         </section>
 
@@ -245,9 +258,10 @@
             <div><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> or <kbd>WASD</kbd> — Slide Tiles</div>
             <div><kbd>U</kbd> or <kbd>Backspace</kbd> — Undo Move</div>
             <div><kbd>X</kbd> — Toggle Smash Mode</div>
+            <div><kbd>C</kbd> — Toggle Swap Mode</div>
             <div><kbd>G</kbd> — Open / Close Guide Book</div>
             <div><kbd>N</kbd> — Start New Game</div>
-            <div><kbd>Esc</kbd> — Cancel Smash / Close Guide</div>
+            <div><kbd>Esc</kbd> — Cancel Power-Up / Close Guide</div>
           </div>
         </section>
       </div>

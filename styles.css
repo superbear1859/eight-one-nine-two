@@ -432,6 +432,7 @@ body {
 
 .undo-btn,
 .smash-btn,
+.swap-btn,
 .theme-btn,
 .guide-btn {
   background-color: var(--btn-secondary-bg);
@@ -441,13 +442,15 @@ body {
 
 .undo-btn:hover:not(:disabled),
 .smash-btn:hover:not(:disabled),
+.swap-btn:hover:not(:disabled),
 .theme-btn:hover:not(:disabled),
 .guide-btn:hover:not(:disabled) {
   background-color: var(--btn-secondary-hover);
 }
 
 .undo-btn:disabled,
-.smash-btn:disabled {
+.smash-btn:disabled,
+.swap-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -459,6 +462,16 @@ body {
 }
 
 .smash-btn.active .smash-badge {
+  background-color: rgba(0, 0, 0, 0.28);
+}
+
+.swap-btn.active {
+  background: linear-gradient(135deg, #06b6d4, #6366f1);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(6, 182, 212, 0.55);
+}
+
+.swap-btn.active .swap-badge {
   background-color: rgba(0, 0, 0, 0.28);
 }
 
@@ -597,12 +610,21 @@ body {
   box-shadow: 0 0 0 3px #ef4444, var(--shadow-soft);
 }
 
-.board-container.smash-mode .tile-container {
+.board-container.swap-mode {
+  box-shadow: 0 0 0 3px #06b6d4, var(--shadow-soft);
+}
+
+.board-container.smash-mode .tile-container,
+.board-container.swap-mode .tile-container {
   pointer-events: auto;
 }
 
 .board-container.smash-mode .tile {
   cursor: crosshair;
+}
+
+.board-container.swap-mode .tile {
+  cursor: pointer;
 }
 
 .board-container.smash-mode .tile .tile-inner {
@@ -614,6 +636,33 @@ body {
   transform: scale(0.92);
   box-shadow: 0 0 0 3px #ef4444, 0 0 18px rgba(239, 68, 68, 0.75);
   filter: brightness(1.08);
+}
+
+.board-container.swap-mode .tile .tile-inner {
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.65);
+}
+
+.board-container.swap-mode .tile:hover .tile-inner {
+  transform: scale(0.95);
+  box-shadow: 0 0 0 3px #06b6d4, 0 0 16px rgba(6, 182, 212, 0.7);
+}
+
+.board-container.swap-mode .tile.swap-selected {
+  z-index: 10;
+}
+
+.board-container.swap-mode .tile.swap-selected .tile-inner {
+  animation: swap-selected-pulse 0.55s ease-in-out infinite alternate;
+  box-shadow: 0 0 0 3.5px #06b6d4, 0 0 22px rgba(6, 182, 212, 0.95);
+}
+
+@keyframes swap-selected-pulse {
+  0% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1.05);
+  }
 }
 
 @keyframes smash-wiggle {

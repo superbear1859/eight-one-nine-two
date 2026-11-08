@@ -29,16 +29,18 @@ Once your corner block reaches `512` or `1024`, random merging won't be enough�
 
 ---
 
-## 3. Mastering Undo & Smash Power-Ups
+## 3. Mastering Undo, Smash & Swap Power-Ups
 
 ### Earning Power-Ups
 - **Undo (`U` or `Backspace`)**: Start with **3** (hold up to **5**). Earn **+1 Undo** every time you merge a new highest block (`8`, `16`, `32`, `64`, `128`, …) for the first time in a match.
 - **Smash (`X`)**: Start with **2** (hold up to **3**). Earn **+1 Smash** every time you merge a major milestone block (`128`, `256`, `512`, `1024`, `2048`, `4096`, `8192+`) for the first time in a match.
+- **Swap (`C`)**: Start with **2** (hold up to **3**). Earn **+1 Swap** every time you merge a major milestone block (`128`, `256`, `512`, `1024`, `2048`, `4096`, `8192+`) for the first time in a match.
 
 ### Pro Power-Up Tricks
 1. **Use Smash to Clear Wedged Low Tiles**: The #1 run-killer in 2048-style games is a `2` or `4` getting trapped between two massive tiles (e.g., `[ 2048 ] [ 4 ] [ 1024 ]`). Instead of breaking your snake chain to merge that `4`, press **`X`** and **Smash** the `4` so `1024` slides right next to `2048`!
-2. **Undo Corner Hijacks Immediately**: If you are forced to swipe **Up** (away from a bottom corner) and a new `2` or `4` spawns inside your corner cell, press **Undo** right away. Often you can use **Smash** on a different tile so you never have to swipe Up in the first place.
-3. **Don't Sit on Full Charges Before a Milestone**: Since Undo caps at **5** and Smash caps at **3**, check your badges before merging a new milestone tile (`128`, `256`, `512`, `1024`). If you're already at `3/3` Smashes, use one to delete an annoying low tile on the board right before completing the milestone merge—you'll immediately get that Smash right back!
+2. **Use Swap to Repair Your Snake or Pair Distant Twins**: If your highest tile gets pulled out of your anchor corner—or if two matching high-tier tiles (like two `512`s) are stranded on opposite sides of the board—press **`C`** and click any two tiles to swap their positions cleanly!
+3. **Undo Corner Hijacks Immediately**: If you are forced to swipe **Up** (away from a bottom corner) and a new `2` or `4` spawns inside your corner cell, press **Undo** right away. Often you can use **Smash** or **Swap** first so you never have to swipe Up in the first place.
+4. **Don't Sit on Full Charges Before a Milestone**: Since Undo caps at **5** and Smash/Swap cap at **3**, check your badges before merging a new milestone tile (`128`, `256`, `512`, `1024`). If you're already at `3/3`, spend a charge to tidy up your board right before completing the milestone merge—you'll immediately earn that charge right back!
 
 ---
 
@@ -63,6 +65,7 @@ Each grid size has its own saved board and **BEST** block record. Each board dou
 - **Slide Tiles**: Arrow Keys (`↑` `↓` `←` `→`), `WASD`, or touch swipe
 - **Undo Last Move**: `U` or `Backspace`
 - **Toggle Smash Mode**: `X` (then click any tile on the board)
+- **Toggle Swap Mode**: `C` (then click any two tiles on the board to swap them)
 - **Open / Close Guide Book**: `G`
 - **Start New Game**: `N`
 - **Cancel Smash / Close Modal**: `Escape`

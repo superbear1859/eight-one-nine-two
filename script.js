@@ -15,9 +15,12 @@ const INITIAL_UNDOS = 3;
 const MAX_UNDOS = 5;
 const INITIAL_SMASHES = 2;
 const MAX_SMASHES = 3;
+const INITIAL_SWAPS = 2;
+const MAX_SWAPS = 3;
 const MAX_HISTORY_LENGTH = 10;
 const MILESTONE_TILES = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 const SMASH_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
+const SWAP_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 
 const THEMES = ['light', 'dark', 'neon-light', 'neon-dark'];
 const THEME_LABELS = {
@@ -163,6 +166,32 @@ class SoundEngine {
     osc.stop(now + 0.16);
   }
 
+  playSwap() {
+    if (!this.enabled) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const notes = [330, 493.88]; // E4 -> B4 whoosh
+    notes.forEach((freq, idx) => {
+      const now = this.ctx.currentTime + idx * 0.055;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.18, now + 0.08);
+
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.095);
+    });
+  }
+
   playMilestone() {
     if (!this.enabled) return;
     this.initContext();
@@ -233,6 +262,8 @@ class Game8192 {
     this.undoCountEl = document.getElementById('undo-count');
     this.smashBtn = document.getElementById('smash-btn');
     this.smashCountEl = document.getElementById('smash-count');
+    this.swapBtn = document.getElementById('swap-btn');
+    this.swapCountEl = document.getElementById('swap-count');
     this.newGameBtn = document.getElementById('new-game-btn');
     this.soundToggleBtn = document.getElementById('sound-toggle');
     this.themeToggleBtn = document.getElementById('theme-toggle');
@@ -248,6 +279,7 @@ class Game8192 {
     this.keepGoingBtn = document.getElementById('keep-going-btn');
     this.overlayUndoBtn = document.getElementById('overlay-undo-btn');
     this.overlaySmashBtn = document.getElementById('overlay-smash-btn');
+    this.overlaySwapBtn = document.getElementById('overlay-swap-btn');
     this.tryAgainBtn = document.getElementById('try-again-btn');
 
     this.sizeButtons = Array.from(document.querySelectorAll('.size-btn'));
@@ -265,7 +297,10 @@ class Game8192 {
     this.bestScore = 0;
     this.undosRemaining = INITIAL_UNDOS;
     this.smashesRemaining = INITIAL_SMASHES;
+    this.swapsRemaining = INITIAL_SWAPS;
     this.smashMode = false;
+    this.swapMode = false;
+    this.swapFirstTile = null;
     this.unlockedMilestones = [];
     this.history = [];
     this.won = false;
@@ -397,6 +432,7 @@ class Game8192 {
     }
 
     this.setSmashMode(false);
+    this.setSwapMode(false);
     if (saveCurrentFirst && this.grid.length > 0) {
       this.saveState();
     }
@@ -453,10 +489,12 @@ class Game8192 {
 
   startNewGame() {
     this.setSmashMode(false);
+    this.setSwapMode(false);
     this.grid = Array.from({ length: this.size }, () => Array(this.size).fill(null));
     this.score = 0;
     this.undosRemaining = INITIAL_UNDOS;
     this.smashesRemaining = INITIAL_SMASHES;
+    this.swapsRemaining = INITIAL_SWAPS;
     this.unlockedMilestones = [];
     this.history = [];
     this.won = false;
@@ -491,6 +529,7 @@ class Game8192 {
       score: this.score,
       undosRemaining: this.undosRemaining,
       smashesRemaining: this.smashesRemaining,
+      swapsRemaining: this.swapsRemaining,
       unlockedMilestones: this.unlockedMilestones,
       history: serializedHistory,
       won: this.won,
@@ -533,6 +572,8 @@ class Game8192 {
         typeof data.undosRemaining === 'number' ? data.undosRemaining : INITIAL_UNDOS;
       this.smashesRemaining =
         typeof data.smashesRemaining === 'number' ? data.smashesRemaining : INITIAL_SMASHES;
+      this.swapsRemaining =
+        typeof data.swapsRemaining === 'number' ? data.swapsRemaining : INITIAL_SWAPS;
       this.unlockedMilestones = Array.isArray(data.unlockedMilestones)
         ? data.unlockedMilestones
         : [];
@@ -596,6 +637,9 @@ class Game8192 {
 
     if (this.smashMode) {
       this.setSmashMode(false);
+    }
+    if (this.swapMode) {
+      this.setSwapMode(false);
     }
 
     const vectors = {
@@ -739,15 +783,21 @@ class Game8192 {
           this.pulseSmashBadge();
         }
 
-        if (gainedUndo && gainedSmash) {
+        const isSwapMilestone = SWAP_MILESTONE_TILES.includes(val);
+        const gainedSwap = isSwapMilestone && this.swapsRemaining < MAX_SWAPS;
+        if (gainedSwap) {
+          this.swapsRemaining++;
+          this.pulseSwapBadge();
+        }
+
+        const rewards = [];
+        if (gainedUndo) rewards.push('+1 Undo');
+        if (gainedSmash) rewards.push('+1 Smash');
+        if (gainedSwap) rewards.push('+1 Swap');
+
+        if (rewards.length > 0) {
           earnedPowerup = true;
-          this.showToast(`New ${val} tile! +1 Undo & +1 Smash`);
-        } else if (gainedSmash) {
-          earnedPowerup = true;
-          this.showToast(`New ${val} tile! +1 Smash (${this.smashesRemaining}/${MAX_SMASHES})`);
-        } else if (gainedUndo) {
-          earnedPowerup = true;
-          this.showToast(`New ${val} tile! +1 Undo (${this.undosRemaining}/${MAX_UNDOS})`);
+          this.showToast(`New ${val} tile! ${rewards.join(' & ')}`);
         } else {
           this.showToast(`New ${val} tile unlocked!`);
           this.pulseUndoBadge();
@@ -808,6 +858,9 @@ class Game8192 {
     if (active && (this.smashesRemaining <= 0 || this.getTileCount() <= 1)) {
       return;
     }
+    if (active && this.swapMode) {
+      this.setSwapMode(false);
+    }
     this.smashMode = Boolean(active);
     this.boardContainer.classList.toggle('smash-mode', this.smashMode);
     if (this.smashBtn) {
@@ -824,6 +877,118 @@ class Game8192 {
 
   toggleSmashMode() {
     this.setSmashMode(!this.smashMode);
+  }
+
+  clearSwapSelectionHighlight() {
+    Array.from(this.tileContainer.querySelectorAll('.swap-selected')).forEach((el) => {
+      el.classList.remove('swap-selected');
+    });
+  }
+
+  setSwapMode(active) {
+    if (active && (this.swapsRemaining <= 0 || this.getTileCount() < 2)) {
+      return;
+    }
+    if (active && this.smashMode) {
+      this.setSmashMode(false);
+    }
+    this.swapMode = Boolean(active);
+    this.swapFirstTile = null;
+    this.clearSwapSelectionHighlight();
+    this.boardContainer.classList.toggle('swap-mode', this.swapMode);
+    if (this.swapBtn) {
+      this.swapBtn.classList.toggle('active', this.swapMode);
+    }
+    if (this.swapMode) {
+      this.overlay.classList.add('hidden');
+      this.showToast('Swap Mode: Click the 1st tile to swap!');
+    } else {
+      this.updateUI();
+    }
+  }
+
+  toggleSwapMode() {
+    this.setSwapMode(!this.swapMode);
+  }
+
+  handleSwapTileClick(r, c) {
+    if (!this.swapMode || this.swapsRemaining <= 0) return;
+    const clickedTile = this.grid[r] && this.grid[r][c];
+    if (!clickedTile) return;
+
+    if (!this.swapFirstTile) {
+      this.swapFirstTile = { r, c, id: clickedTile.id };
+      const domEl = document.getElementById(`tile-${clickedTile.id}`);
+      if (domEl) {
+        domEl.classList.add('swap-selected');
+      }
+      this.showToast('Now click a 2nd tile to swap positions!');
+      return;
+    }
+
+    // Clicking the same tile again deselects it
+    if (this.swapFirstTile.r === r && this.swapFirstTile.c === c) {
+      this.swapFirstTile = null;
+      this.clearSwapSelectionHighlight();
+      this.showToast('Selection cleared — click the 1st tile to swap!');
+      return;
+    }
+
+    const r1 = this.swapFirstTile.r;
+    const c1 = this.swapFirstTile.c;
+    const tile1 = this.grid[r1] && this.grid[r1][c1];
+    const tile2 = clickedTile;
+
+    if (!tile1 || !tile2) {
+      this.setSwapMode(false);
+      return;
+    }
+
+    // Save snapshot so Undo can revert a Swap if desired
+    const preSwapSnapshot = {
+      grid: this.serializeGridValues(),
+      score: this.score,
+      unlockedMilestones: [...this.unlockedMilestones],
+      won: this.won,
+      keepPlaying: this.keepPlaying,
+    };
+    this.history.push(preSwapSnapshot);
+    if (this.history.length > MAX_HISTORY_LENGTH) {
+      this.history.shift();
+    }
+
+    // Clear animation flags before swapping
+    for (let row = 0; row < this.size; row++) {
+      for (let col = 0; col < this.size; col++) {
+        const t = this.grid[row][col];
+        if (t) {
+          t.isNew = false;
+          t.mergedFrom = null;
+        }
+      }
+    }
+
+    // Swap positions in grid and update row/col so CSS transition slides them smoothly
+    this.grid[r1][c1] = tile2;
+    this.grid[r][c] = tile1;
+    tile1.row = r;
+    tile1.col = c;
+    tile2.row = r1;
+    tile2.col = c1;
+
+    this.swapsRemaining--;
+    this.over = false;
+
+    this.sound.playSwap();
+    this.setSwapMode(false);
+
+    if (!this.hasMovesAvailable()) {
+      this.over = true;
+    }
+
+    this.saveState();
+    this.renderBoard(false);
+    this.updateUI();
   }
 
   smashTileAt(r, c) {
@@ -878,6 +1043,7 @@ class Game8192 {
     if (this.undosRemaining <= 0 || this.history.length === 0) return;
 
     this.setSmashMode(false);
+    this.setSwapMode(false);
 
     const prev = this.history.pop();
     this.undosRemaining--;
@@ -1012,8 +1178,14 @@ class Game8192 {
       this.smashBtn.classList.toggle('active', this.smashMode);
     }
 
+    if (this.swapCountEl && this.swapBtn) {
+      this.swapCountEl.textContent = String(this.swapsRemaining);
+      this.swapBtn.disabled = this.swapsRemaining <= 0 || this.getTileCount() < 2;
+      this.swapBtn.classList.toggle('active', this.swapMode);
+    }
+
     // Overlay handling
-    if (this.smashMode) {
+    if (this.smashMode || this.swapMode) {
       this.overlay.classList.add('hidden');
       return;
     }
@@ -1026,20 +1198,25 @@ class Game8192 {
       this.keepGoingBtn.classList.remove('hidden');
       this.overlayUndoBtn.classList.add('hidden');
       if (this.overlaySmashBtn) this.overlaySmashBtn.classList.add('hidden');
+      if (this.overlaySwapBtn) this.overlaySwapBtn.classList.add('hidden');
     } else if (this.over) {
       this.overlay.classList.remove('hidden');
       this.overlay.classList.remove('win-state');
       this.overlayTitle.textContent = 'Game Over!';
       const canUndo = this.undosRemaining > 0 && this.history.length > 0;
       const canSmash = this.smashesRemaining > 0 && this.getTileCount() > 1;
+      const canSwap = this.swapsRemaining > 0 && this.getTileCount() >= 2;
       this.overlayMessage.textContent =
-        canUndo || canSmash
+        canUndo || canSmash || canSwap
           ? 'No more moves—use a Power-Up or start fresh!'
           : 'No more moves available.';
       this.keepGoingBtn.classList.add('hidden');
       this.overlayUndoBtn.classList.toggle('hidden', !canUndo);
       if (this.overlaySmashBtn) {
         this.overlaySmashBtn.classList.toggle('hidden', !canSmash);
+      }
+      if (this.overlaySwapBtn) {
+        this.overlaySwapBtn.classList.toggle('hidden', !canSwap);
       }
     } else {
       this.overlay.classList.add('hidden');
@@ -1067,6 +1244,14 @@ class Game8192 {
     this.smashCountEl.classList.add('pulse');
     setTimeout(() => {
       this.smashCountEl.classList.remove('pulse');
+    }, 450);
+  }
+
+  pulseSwapBadge() {
+    if (!this.swapCountEl) return;
+    this.swapCountEl.classList.add('pulse');
+    setTimeout(() => {
+      this.swapCountEl.classList.remove('pulse');
     }, 450);
   }
 
@@ -1117,16 +1302,27 @@ class Game8192 {
       this.overlaySmashBtn.addEventListener('click', () => this.setSmashMode(true));
     }
 
-    // Click on a tile when Smash Mode is active
+    if (this.swapBtn) {
+      this.swapBtn.addEventListener('click', () => this.toggleSwapMode());
+    }
+    if (this.overlaySwapBtn) {
+      this.overlaySwapBtn.addEventListener('click', () => this.setSwapMode(true));
+    }
+
+    // Click on a tile when Smash Mode or Swap Mode is active
     this.tileContainer.addEventListener('click', (e) => {
-      if (!this.smashMode) return;
+      if (!this.smashMode && !this.swapMode) return;
       const tileEl = e.target.closest('.tile');
       if (!tileEl) return;
       const r = parseInt(tileEl.getAttribute('data-row'), 10);
       const c = parseInt(tileEl.getAttribute('data-col'), 10);
       if (!Number.isNaN(r) && !Number.isNaN(c)) {
         e.stopPropagation();
-        this.smashTileAt(r, c);
+        if (this.smashMode) {
+          this.smashTileAt(r, c);
+        } else if (this.swapMode) {
+          this.handleSwapTileClick(r, c);
+        }
       }
     });
 
@@ -1196,14 +1392,18 @@ class Game8192 {
       } else if (e.code === 'KeyX') {
         e.preventDefault();
         this.toggleSmashMode();
+      } else if (e.code === 'KeyC') {
+        e.preventDefault();
+        this.toggleSwapMode();
       } else if (e.code === 'KeyG') {
         e.preventDefault();
         if (this.guideModal) {
           this.guideModal.classList.remove('hidden');
         }
-      } else if (e.code === 'Escape' && this.smashMode) {
+      } else if (e.code === 'Escape' && (this.smashMode || this.swapMode)) {
         e.preventDefault();
         this.setSmashMode(false);
+        this.setSwapMode(false);
       } else if (e.code === 'KeyN') {
         e.preventDefault();
         this.startNewGame();
