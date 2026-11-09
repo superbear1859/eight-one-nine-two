@@ -2019,9 +2019,11 @@ class Game8192 {
           return;
         }
 
-        const isSplit = Boolean(window.isSplitScreenActive);
+        const screenCount = window.activeScreenCount || 1;
         const game1 = this;
         const game2 = window.game8192P2;
+        const game3 = window.game8192P3;
+        const game4 = window.game8192P4;
 
         const wasdMap = {
           KeyW: 'up',
@@ -2035,17 +2037,35 @@ class Game8192 {
           ArrowLeft: 'left',
           ArrowRight: 'right',
         };
+        const ijklMap = {
+          KeyI: 'up',
+          KeyK: 'down',
+          KeyJ: 'left',
+          KeyL: 'right',
+        };
+        const tfghMap = {
+          KeyT: 'up',
+          KeyG: 'down',
+          KeyF: 'left',
+          KeyH: 'right',
+        };
 
         if (wasdMap[e.code]) {
           e.preventDefault();
           game1.move(wasdMap[e.code]);
         } else if (arrowMap[e.code]) {
           e.preventDefault();
-          if (isSplit && game2) {
+          if (screenCount >= 2 && game2) {
             game2.move(arrowMap[e.code]);
           } else {
             game1.move(arrowMap[e.code]);
           }
+        } else if (screenCount >= 3 && ijklMap[e.code] && game3) {
+          e.preventDefault();
+          game3.move(ijklMap[e.code]);
+        } else if (screenCount >= 4 && tfghMap[e.code] && game4) {
+          e.preventDefault();
+          game4.move(tfghMap[e.code]);
         } else if (e.code === 'KeyU' || e.code === 'Backspace') {
           e.preventDefault();
           game1.undo();
@@ -2191,58 +2211,90 @@ document.addEventListener('DOMContentLoaded', () => {
   const wrapper = document.getElementById('split-screen-wrapper');
   const pane1 = document.getElementById('game-pane-1');
 
-  // Clone Screen 1 template before initializing so Screen 2 starts with clean markup
-  const pane2Template = pane1.cloneNode(true);
-  pane2Template.id = 'game-pane-2';
-  pane2Template.setAttribute('data-player', '2');
-  pane2Template.classList.add('hidden');
-  // Remove duplicate element IDs inside pane2 (Game8192 uses data-role queries)
-  Array.from(pane2Template.querySelectorAll('[id]')).forEach((el) => {
-    if (el !== pane2Template) {
-      el.removeAttribute('id');
+  const createClonedPane = (playerNum, badgeLabel) => {
+    const clonedPane = pane1.cloneNode(true);
+    clonedPane.id = `game-pane-${playerNum}`;
+    clonedPane.setAttribute('data-player', String(playerNum));
+    clonedPane.classList.add('hidden');
+    // Remove duplicate element IDs inside cloned pane (Game8192 uses data-role queries)
+    Array.from(clonedPane.querySelectorAll('[id]')).forEach((el) => {
+      if (el !== clonedPane) {
+        el.removeAttribute('id');
+      }
+    });
+    const badge = clonedPane.querySelector('[data-role="player-badge"]');
+    if (badge) {
+      badge.textContent = badgeLabel;
     }
-  });
-  const badge2 = pane2Template.querySelector('[data-role="player-badge"]');
-  if (badge2) {
-    badge2.textContent = 'P2 • Arrows / Swipe';
-  }
-  wrapper.appendChild(pane2Template);
+    wrapper.appendChild(clonedPane);
+    return clonedPane;
+  };
+
+  // Clone Screen 1 template before initializing so Screens 2, 3, and 4 start with clean markup
+  const pane2 = createClonedPane(2, 'P2 • Arrows / Swipe');
+  const pane3 = createClonedPane(3, 'P3 • IJKL / Swipe');
+  const pane4 = createClonedPane(4, 'P4 • TFGH / Swipe');
 
   const game1 = new Game8192(pane1, 1, null);
-  const game2 = new Game8192(pane2Template, 2, game1.sound);
+  const game2 = new Game8192(pane2, 2, game1.sound);
+  const game3 = new Game8192(pane3, 3, game1.sound);
+  const game4 = new Game8192(pane4, 4, game1.sound);
 
   window.game8192 = game1;
   window.game8192P2 = game2;
-  window.games8192 = [game1, game2];
+  window.game8192P3 = game3;
+  window.game8192P4 = game4;
+  window.games8192 = [game1, game2, game3, game4];
 
-  const applySplitScreenState = (active) => {
-    window.isSplitScreenActive = Boolean(active);
-    localStorage.setItem(STORAGE_KEYS.SPLIT_SCREEN, String(window.isSplitScreenActive));
-    wrapper.classList.toggle('split-active', window.isSplitScreenActive);
-    pane2Template.classList.toggle('hidden', !window.isSplitScreenActive);
+  const extraPanes = [
+    { num: 2, el: pane2 },
+    { num: 3, el: pane3 },
+    { num: 4, el: pane4 },
+  ];
+
+  const applyScreenCount = (rawCount) => {
+    const count = Math.min(4, Math.max(1, Number(rawCount) || 1));
+    window.activeScreenCount = count;
+    window.isSplitScreenActive = count > 1;
+    localStorage.setItem(STORAGE_KEYS.SPLIT_SCREEN, String(count));
+
+    wrapper.setAttribute('data-screen-count', String(count));
+    wrapper.classList.toggle('split-active', count > 1);
+
+    extraPanes.forEach(({ num, el }) => {
+      el.classList.toggle('hidden', num > count);
+    });
 
     window.games8192.forEach((g) => {
       if (g.playerBadgeEl) {
-        g.playerBadgeEl.classList.toggle('hidden', !window.isSplitScreenActive);
+        g.playerBadgeEl.classList.toggle('hidden', count === 1);
       }
       if (g.splitToggleBtn) {
-        g.splitToggleBtn.classList.toggle('active', window.isSplitScreenActive);
+        g.splitToggleBtn.classList.toggle('active', count > 1);
       }
       if (g.splitLabelEl) {
-        g.splitLabelEl.textContent = window.isSplitScreenActive ? '1 Screen' : '2 Screens';
+        g.splitLabelEl.textContent = count === 1 ? '1 Screen' : `${count} Screens`;
       }
     });
   };
 
   window.toggleSplitScreen = () => {
-    applySplitScreenState(!window.isSplitScreenActive);
-    game1.showToast(
-      window.isSplitScreenActive
-        ? '🎮 2-Screen Mode On! Swipe either board independently!'
-        : '1-Screen Mode Active'
-    );
+    const current = window.activeScreenCount || 1;
+    const nextCount = current >= 4 ? 1 : current + 1;
+    applyScreenCount(nextCount);
+    if (nextCount === 1) {
+      game1.showToast('1-Screen Mode Active');
+    } else {
+      game1.showToast(`🎮 ${nextCount}-Screen Mode On! Swipe any board independently!`);
+    }
   };
 
-  const savedSplit = localStorage.getItem(STORAGE_KEYS.SPLIT_SCREEN) === 'true';
-  applySplitScreenState(savedSplit);
+  const savedRaw = localStorage.getItem(STORAGE_KEYS.SPLIT_SCREEN);
+  let initialCount = 1;
+  if (savedRaw === 'true') {
+    initialCount = 2;
+  } else if (savedRaw === '2' || savedRaw === '3' || savedRaw === '4') {
+    initialCount = Number(savedRaw);
+  }
+  applyScreenCount(initialCount);
 });

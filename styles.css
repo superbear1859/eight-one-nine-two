@@ -193,28 +193,71 @@ body {
   justify-content: center;
   align-items: flex-start;
   gap: 24px;
+  flex-wrap: wrap;
 }
 
-.split-screen-wrapper.split-active {
+.split-screen-wrapper[data-screen-count="2"] {
   max-width: 1040px;
 }
 
-.split-screen-wrapper.split-active .app-container {
+.split-screen-wrapper[data-screen-count="2"] .app-container {
   --board-size: min(45vw, 450px);
   max-width: var(--board-size);
   flex: 1 1 0;
 }
 
+.split-screen-wrapper[data-screen-count="3"] {
+  max-width: 1460px;
+  gap: 18px;
+}
+
+.split-screen-wrapper[data-screen-count="3"] .app-container {
+  --board-size: min(30vw, 390px);
+  max-width: var(--board-size);
+  flex: 1 1 0;
+}
+
+.split-screen-wrapper[data-screen-count="4"] {
+  max-width: 980px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-items: center;
+  gap: 22px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .app-container {
+  --board-size: min(44vw, 420px);
+  max-width: var(--board-size);
+}
+
+@media (max-width: 1120px) {
+  .split-screen-wrapper[data-screen-count="3"] {
+    max-width: 980px;
+  }
+
+  .split-screen-wrapper[data-screen-count="3"] .app-container {
+    --board-size: min(44vw, 420px);
+    max-width: var(--board-size);
+    flex: 1 1 42%;
+  }
+}
+
 @media (max-width: 820px) {
-  .split-screen-wrapper.split-active {
+  .split-screen-wrapper[data-screen-count="2"],
+  .split-screen-wrapper[data-screen-count="3"],
+  .split-screen-wrapper[data-screen-count="4"] {
+    display: flex;
     flex-direction: column;
     align-items: center;
     gap: 28px;
   }
 
-  .split-screen-wrapper.split-active .app-container {
+  .split-screen-wrapper[data-screen-count="2"] .app-container,
+  .split-screen-wrapper[data-screen-count="3"] .app-container,
+  .split-screen-wrapper[data-screen-count="4"] .app-container {
     --board-size: min(92vw, 440px);
     max-width: 470px;
+    flex: 1 1 auto;
   }
 
   .split-screen-wrapper.split-active .app-container + .app-container {
@@ -251,6 +294,14 @@ body {
 
 [data-player="2"] .player-badge {
   background: linear-gradient(135deg, #06b6d4, #10b981);
+}
+
+[data-player="3"] .player-badge {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+}
+
+[data-player="4"] .player-badge {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
 }
 
 /* ==========================================================================
