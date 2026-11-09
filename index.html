@@ -7,23 +7,27 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-container">
+  <div class="split-screen-wrapper" id="split-screen-wrapper">
+    <div class="app-container" id="game-pane-1" data-player="1">
     <!-- Top Header: Title + Stats -->
     <header class="game-header">
       <div class="title-block">
-        <h1 class="game-title">8192</h1>
+        <div class="title-row">
+          <h1 class="game-title">8192</h1>
+          <span class="player-badge hidden" data-role="player-badge">P1 • WASD / Swipe</span>
+        </div>
         <p class="game-subtitle">Join the numbers and get to the <strong>8192 tile!</strong></p>
       </div>
 
       <div class="scores-container">
         <div class="score-box">
           <span class="score-label">SCORE</span>
-          <span class="score-value" id="current-score">0</span>
-          <span class="score-addition" id="score-addition"></span>
+          <span class="score-value" id="current-score" data-role="current-score">0</span>
+          <span class="score-addition" id="score-addition" data-role="score-addition"></span>
         </div>
         <div class="score-box">
           <span class="score-label">BEST</span>
-          <span class="score-value" id="best-score">0</span>
+          <span class="score-value" id="best-score" data-role="best-score">0</span>
         </div>
       </div>
     </header>
@@ -38,7 +42,7 @@
         <button type="button" class="size-btn" data-size="8">8×8</button>
         <button type="button" class="size-btn" data-size="9">9×9</button>
         <button type="button" class="size-btn" data-size="10">10×10</button>
-        <button type="button" class="reset-unlocks-btn" id="reset-unlocks-btn" title="Reset unlocked grids back to 4×4">
+        <button type="button" class="reset-unlocks-btn" id="reset-unlocks-btn" data-role="reset-unlocks-btn" title="Reset unlocked grids back to 4×4">
           <svg class="icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <path d="M3 3v5h5"></path>
@@ -48,26 +52,26 @@
       </div>
 
       <div class="action-buttons">
-        <button type="button" class="action-btn undo-btn" id="undo-btn" title="Undo last move (U or Backspace)">
+        <button type="button" class="action-btn undo-btn" id="undo-btn" data-role="undo-btn" title="Undo last move (U or Backspace)">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 7v6h6"></path>
             <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
           </svg>
           <span>Undo</span>
-          <span class="undo-badge" id="undo-count">3</span>
+          <span class="undo-badge" id="undo-count" data-role="undo-count">3</span>
         </button>
 
-        <button type="button" class="action-btn smash-btn" id="smash-btn" title="Smash / Remove a tile (X)">
+        <button type="button" class="action-btn smash-btn" id="smash-btn" data-role="smash-btn" title="Smash / Remove a tile (X)">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9"></path>
             <path d="M17.64 15 22 10.64"></path>
             <path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91"></path>
           </svg>
           <span>Smash</span>
-          <span class="undo-badge smash-badge" id="smash-count">2</span>
+          <span class="undo-badge smash-badge" id="smash-count" data-role="smash-count">2</span>
         </button>
 
-        <button type="button" class="action-btn swap-btn" id="swap-btn" title="Swap any two tiles on the board (C)">
+        <button type="button" class="action-btn swap-btn" id="swap-btn" data-role="swap-btn" title="Swap any two tiles on the board (C)">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m16 3 4 4-4 4"></path>
             <path d="M20 7H4"></path>
@@ -75,20 +79,28 @@
             <path d="M4 17h16"></path>
           </svg>
           <span>Swap</span>
-          <span class="undo-badge swap-badge" id="swap-count">2</span>
+          <span class="undo-badge swap-badge" id="swap-count" data-role="swap-count">2</span>
         </button>
 
-        <button type="button" class="action-btn double-btn" id="double-btn" title="Double any tile on the board (V)">
+        <button type="button" class="action-btn double-btn" id="double-btn" data-role="double-btn" title="Double any tile on the board (V)">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m18 15-6-6-6 6"></path>
             <path d="m18 9-6-6-6 6"></path>
             <line x1="12" y1="3" x2="12" y2="21"></line>
           </svg>
           <span>Double</span>
-          <span class="undo-badge double-badge" id="double-count">1</span>
+          <span class="undo-badge double-badge" id="double-count" data-role="double-count">1</span>
         </button>
 
-        <button type="button" class="icon-btn" id="sound-toggle" title="Toggle Sound Effects" aria-label="Toggle Sound Effects">
+        <button type="button" class="action-btn split-btn" id="split-toggle" data-role="split-toggle" title="Toggle 2-Player Split Screen (P)" aria-label="Toggle 2-Player Split Screen">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <line x1="12" y1="3" x2="12" y2="21"></line>
+          </svg>
+          <span data-role="split-label">2 Screens</span>
+        </button>
+
+        <button type="button" class="icon-btn" id="sound-toggle" data-role="sound-toggle" title="Toggle Sound Effects" aria-label="Toggle Sound Effects">
           <svg class="icon sound-on-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
@@ -101,7 +113,7 @@
           </svg>
         </button>
 
-        <button type="button" class="icon-btn" id="music-toggle" title="Toggle Background Music (M)" aria-label="Toggle Background Music">
+        <button type="button" class="action-btn music-btn" id="music-toggle" data-role="music-toggle" title="Cycle Background Music: On / 2× Canon (+0.4s) / Off (M)" aria-label="Cycle Background Music">
           <svg class="icon music-on-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18V5l12-2v13"></path>
             <circle cx="6" cy="18" r="3"></circle>
@@ -113,9 +125,10 @@
             <circle cx="18" cy="16" r="3"></circle>
             <line x1="2" y1="2" x2="22" y2="22"></line>
           </svg>
+          <span class="music-mode-label" data-role="music-label">1×</span>
         </button>
 
-        <button type="button" class="action-btn theme-btn" id="theme-toggle" title="Cycle Theme: Light / Dark / Neon Light / Neon Dark" aria-label="Cycle Theme">
+        <button type="button" class="action-btn theme-btn" id="theme-toggle" data-role="theme-toggle" title="Cycle Theme: Light / Dark / Neon Light / Neon Dark" aria-label="Cycle Theme">
           <svg class="icon theme-icon-light" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -136,10 +149,10 @@
           <svg class="icon theme-icon-neon-dark hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
           </svg>
-          <span id="theme-label">Light</span>
+          <span id="theme-label" data-role="theme-label">Light</span>
         </button>
 
-        <button type="button" class="action-btn guide-btn" id="guide-btn" title="Open 8192 Guide Book: Tips &amp; Tricks (G)">
+        <button type="button" class="action-btn guide-btn" id="guide-btn" data-role="guide-btn" title="Open 8192 Guide Book: Tips &amp; Tricks (G)">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
@@ -147,7 +160,7 @@
           <span>Guide</span>
         </button>
 
-        <button type="button" class="icon-btn secret-btn" id="secret-btn" title="Enter Secret Password" aria-label="Enter Secret Password">
+        <button type="button" class="icon-btn secret-btn" id="secret-btn" data-role="secret-btn" title="Enter Secret Password" aria-label="Enter Secret Password">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="7.5" cy="15.5" r="5.5"></circle>
             <path d="m21 2-9.6 9.6"></path>
@@ -155,33 +168,33 @@
           </svg>
         </button>
 
-        <button type="button" class="action-btn new-game-btn" id="new-game-btn" title="Start a new game (N)">
+        <button type="button" class="action-btn new-game-btn" id="new-game-btn" data-role="new-game-btn" title="Start a new game (N)">
           New Game
         </button>
       </div>
     </section>
 
     <!-- Milestone Notification Toast -->
-    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+    <div class="toast-container" id="toast-container" data-role="toast-container" aria-live="polite"></div>
 
     <!-- Main Game Board -->
     <main class="board-wrapper">
-      <div class="board-container" id="board-container" data-grid-size="4">
-        <div class="grid-background" id="grid-background"></div>
-        <div class="tile-container" id="tile-container"></div>
+      <div class="board-container" id="board-container" data-role="board-container" data-grid-size="4">
+        <div class="grid-background" id="grid-background" data-role="grid-background"></div>
+        <div class="tile-container" id="tile-container" data-role="tile-container"></div>
 
         <!-- Overlay for Win / Game Over -->
-        <div class="game-overlay hidden" id="game-overlay">
+        <div class="game-overlay hidden" id="game-overlay" data-role="game-overlay">
           <div class="overlay-content">
-            <h2 class="overlay-title" id="overlay-title">You Win!</h2>
-            <p class="overlay-message" id="overlay-message">You reached the 8192 tile!</p>
+            <h2 class="overlay-title" id="overlay-title" data-role="overlay-title">You Win!</h2>
+            <p class="overlay-message" id="overlay-message" data-role="overlay-message">You reached the 8192 tile!</p>
             <div class="overlay-actions">
-              <button type="button" class="overlay-btn primary-btn hidden" id="keep-going-btn">Keep Going</button>
-              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-undo-btn">Undo Last Move</button>
-              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-smash-btn">Smash a Tile</button>
-              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-swap-btn">Swap Two Tiles</button>
-              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-double-btn">Double a Tile</button>
-              <button type="button" class="overlay-btn primary-btn" id="try-again-btn">Play Again</button>
+              <button type="button" class="overlay-btn primary-btn hidden" id="keep-going-btn" data-role="keep-going-btn">Keep Going</button>
+              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-undo-btn" data-role="overlay-undo-btn">Undo Last Move</button>
+              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-smash-btn" data-role="overlay-smash-btn">Smash a Tile</button>
+              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-swap-btn" data-role="overlay-swap-btn">Swap Two Tiles</button>
+              <button type="button" class="overlay-btn secondary-btn hidden" id="overlay-double-btn" data-role="overlay-double-btn">Double a Tile</button>
+              <button type="button" class="overlay-btn primary-btn" id="try-again-btn" data-role="try-again-btn">Play Again</button>
             </div>
           </div>
         </div>
@@ -191,7 +204,7 @@
     <!-- Footer Instructions -->
     <footer class="game-footer">
       <p class="how-to-play">
-        <strong>HOW TO PLAY:</strong> Use your <strong>arrow keys</strong>, <strong>WASD</strong>, or <strong>swipe</strong> to slide tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+        <strong>HOW TO PLAY:</strong> Use your <strong>arrow keys</strong>, <strong>WASD</strong>, or <strong>swipe</strong> to slide tiles. In <strong>2-Screen Mode</strong>, swipe either board independently (or use <strong>WASD</strong> for Screen 1 &amp; <strong>Arrow Keys</strong> for Screen 2)!
       </p>
       <p class="undo-rules">
         <strong>PROGRESSION:</strong> Reach <strong>128</strong> on <strong>4×4</strong> to unlock <strong>5×5</strong>, <strong>256</strong> on <strong>5×5</strong> to unlock <strong>6×6</strong>, <strong>512</strong> on <strong>6×6</strong> to unlock <strong>7×7</strong>, and so on (up to <strong>4096</strong> on <strong>9×9</strong> to unlock <strong>10×10</strong>)!
@@ -200,6 +213,7 @@
         <strong>POWER-UPS:</strong> Start with <strong>3 Undos</strong> (max 5), <strong>2 Smashes</strong> (max 3), <strong>2 Swaps</strong> (max 3), and <strong>1 Double</strong> (max 1). Click <strong>Smash</strong> (<code>X</code>) to destroy any tile, <strong>Swap</strong> (<code>C</code>) to swap two tiles, or <strong>Double</strong> (<code>V</code>) to 2× any tile! Earn <strong>+1 Undo</strong> on every new block (<strong>8+</strong>) and <strong>+1 Smash, +1 Swap &amp; +1 Double</strong> on major milestone blocks (<strong>128+</strong>).
       </p>
     </footer>
+    </div>
   </div>
 
   <!-- 8192 Strategy Guide Book Modal -->

@@ -43,6 +43,7 @@ const STORAGE_KEYS = {
   SOUND: 'game_8192_sound_v1',
   MUSIC: 'game_8192_music_v1',
   ACTIVE_SIZE: 'game_8192_active_size_v1',
+  SPLIT_SCREEN: 'game_8192_split_screen_v1',
 };
 
 // Theme-based background music definitions (Web Audio procedural soundtracks)
@@ -130,10 +131,20 @@ class SoundEngine {
     const savedSound = localStorage.getItem(STORAGE_KEYS.SOUND);
     this.enabled = savedSound !== null ? savedSound === 'true' : true;
     const savedMusic = localStorage.getItem(STORAGE_KEYS.MUSIC);
-    this.musicEnabled = savedMusic !== null ? savedMusic === 'true' : true;
+    if (savedMusic === 'false' || savedMusic === 'off') {
+      this.musicMode = 'off';
+    } else if (savedMusic === 'canon') {
+      this.musicMode = 'canon';
+    } else {
+      this.musicMode = 'normal';
+    }
+    this.musicEnabled = this.musicMode !== 'off';
     this.currentTheme = 'light';
     this.musicTimer = null;
+    this.canonTimeout = null;
+    this.canonTimer = null;
     this.musicStep = 0;
+    this.canonStep = 0;
   }
 
   initContext() {
@@ -161,15 +172,19 @@ class SoundEngine {
   }
 
   toggleMusic() {
-    this.musicEnabled = !this.musicEnabled;
-    localStorage.setItem(STORAGE_KEYS.MUSIC, String(this.musicEnabled));
+    const order = ['normal', 'canon', 'off'];
+    const nextIdx = (order.indexOf(this.musicMode) + 1) % order.length;
+    this.musicMode = order[nextIdx];
+    this.musicEnabled = this.musicMode !== 'off';
+    localStorage.setItem(STORAGE_KEYS.MUSIC, this.musicMode);
+
     if (this.musicEnabled) {
       this.initContext();
       this.startMusicLoop();
     } else {
       this.stopMusicLoop();
     }
-    return this.musicEnabled;
+    return this.musicMode;
   }
 
   setMusicTheme(theme) {
@@ -177,7 +192,6 @@ class SoundEngine {
     const changed = this.currentTheme !== nextTheme;
     this.currentTheme = nextTheme;
     if (this.musicEnabled && this.musicTimer && changed) {
-      this.musicStep = 0;
       this.startMusicLoop();
     }
   }
@@ -186,9 +200,25 @@ class SoundEngine {
     this.stopMusicLoop();
     if (!this.musicEnabled) return;
     const track = THEME_MUSIC[this.currentTheme] || THEME_MUSIC.light;
+    this.musicStep = 0;
+    this.canonStep = 0;
+
+    // Start 1st background music loop immediately
+    this.playMusicStep('primary');
     this.musicTimer = setInterval(() => {
-      this.playMusicStep();
+      this.playMusicStep('primary');
     }, track.stepMs);
+
+    // In 2× Canon Mode, start a 2nd identical music loop 0.4 seconds (400ms) later so both keep playing over and over!
+    if (this.musicMode === 'canon') {
+      this.canonTimeout = setTimeout(() => {
+        if (!this.musicEnabled || this.musicMode !== 'canon') return;
+        this.playMusicStep('canon');
+        this.canonTimer = setInterval(() => {
+          this.playMusicStep('canon');
+        }, track.stepMs);
+      }, 400);
+    }
   }
 
   stopMusicLoop() {
@@ -196,13 +226,27 @@ class SoundEngine {
       clearInterval(this.musicTimer);
       this.musicTimer = null;
     }
+    if (this.canonTimeout) {
+      clearTimeout(this.canonTimeout);
+      this.canonTimeout = null;
+    }
+    if (this.canonTimer) {
+      clearInterval(this.canonTimer);
+      this.canonTimer = null;
+    }
   }
 
-  playMusicStep() {
+  playMusicStep(voice = 'primary') {
     if (!this.musicEnabled || !this.ctx || this.ctx.state !== 'running') return;
     const track = THEME_MUSIC[this.currentTheme] || THEME_MUSIC.light;
-    const stepIdx = this.musicStep % track.lead.length;
-    this.musicStep++;
+    let stepIdx;
+    if (voice === 'canon') {
+      stepIdx = this.canonStep % track.lead.length;
+      this.canonStep++;
+    } else {
+      stepIdx = this.musicStep % track.lead.length;
+      this.musicStep++;
+    }
 
     const now = this.ctx.currentTime;
     const leadFreq = track.lead[stepIdx];
@@ -460,59 +504,72 @@ class SoundEngine {
 }
 
 /* ==========================================================================
-   Main 8192 Game Controller
+   Main 8192 Game Controller (Supports Multiple Independent Screens)
    ========================================================================== */
 class Game8192 {
-  constructor() {
-    this.sound = new SoundEngine();
+  constructor(rootEl = document.getElementById('game-pane-1') || document, playerIndex = 1, sharedSound = null) {
+    this.rootEl = rootEl;
+    this.playerIndex = playerIndex;
+    this.storageSuffix = playerIndex === 1 ? '' : `_p${playerIndex}`;
+    this.tileIdPrefix = `p${playerIndex}-tile-`;
+    this.sound = sharedSound || new SoundEngine();
 
-    // DOM Elements
-    this.boardContainer = document.getElementById('board-container');
-    this.gridBackground = document.getElementById('grid-background');
-    this.tileContainer = document.getElementById('tile-container');
-    this.currentScoreEl = document.getElementById('current-score');
-    this.bestScoreEl = document.getElementById('best-score');
-    this.scoreAdditionEl = document.getElementById('score-addition');
-    this.undoBtn = document.getElementById('undo-btn');
-    this.undoCountEl = document.getElementById('undo-count');
-    this.smashBtn = document.getElementById('smash-btn');
-    this.smashCountEl = document.getElementById('smash-count');
-    this.swapBtn = document.getElementById('swap-btn');
-    this.swapCountEl = document.getElementById('swap-count');
-    this.doubleBtn = document.getElementById('double-btn');
-    this.doubleCountEl = document.getElementById('double-count');
-    this.newGameBtn = document.getElementById('new-game-btn');
-    this.soundToggleBtn = document.getElementById('sound-toggle');
-    this.musicToggleBtn = document.getElementById('music-toggle');
-    this.themeToggleBtn = document.getElementById('theme-toggle');
-    this.guideBtn = document.getElementById('guide-btn');
+    const q = (role, fallbackId) =>
+      (this.rootEl.querySelector && this.rootEl.querySelector(`[data-role="${role}"]`)) ||
+      document.getElementById(fallbackId);
+
+    // DOM Elements scoped to this screen's container
+    this.boardContainer = q('board-container', 'board-container');
+    this.gridBackground = q('grid-background', 'grid-background');
+    this.tileContainer = q('tile-container', 'tile-container');
+    this.currentScoreEl = q('current-score', 'current-score');
+    this.bestScoreEl = q('best-score', 'best-score');
+    this.scoreAdditionEl = q('score-addition', 'score-addition');
+    this.undoBtn = q('undo-btn', 'undo-btn');
+    this.undoCountEl = q('undo-count', 'undo-count');
+    this.smashBtn = q('smash-btn', 'smash-btn');
+    this.smashCountEl = q('smash-count', 'smash-count');
+    this.swapBtn = q('swap-btn', 'swap-btn');
+    this.swapCountEl = q('swap-count', 'swap-count');
+    this.doubleBtn = q('double-btn', 'double-btn');
+    this.doubleCountEl = q('double-count', 'double-count');
+    this.splitToggleBtn = q('split-toggle', 'split-toggle');
+    this.splitLabelEl = q('split-label', 'split-label');
+    this.playerBadgeEl = q('player-badge', 'player-badge');
+    this.newGameBtn = q('new-game-btn', 'new-game-btn');
+    this.soundToggleBtn = q('sound-toggle', 'sound-toggle');
+    this.musicToggleBtn = q('music-toggle', 'music-toggle');
+    this.musicLabelEl = q('music-label', 'music-label');
+    this.themeToggleBtn = q('theme-toggle', 'theme-toggle');
+    this.themeLabelEl = q('theme-label', 'theme-label');
+    this.guideBtn = q('guide-btn', 'guide-btn');
     this.guideModal = document.getElementById('guide-modal');
     this.guideCloseBtn = document.getElementById('guide-close-btn');
-    this.secretBtn = document.getElementById('secret-btn');
+    this.secretBtn = q('secret-btn', 'secret-btn');
     this.secretModal = document.getElementById('secret-modal');
     this.secretCloseBtn = document.getElementById('secret-close-btn');
     this.secretForm = document.getElementById('secret-form');
     this.secretInput = document.getElementById('secret-input');
-    this.toastContainer = document.getElementById('toast-container');
+    this.toastContainer = q('toast-container', 'toast-container');
 
     // Overlay Elements
-    this.overlay = document.getElementById('game-overlay');
-    this.overlayTitle = document.getElementById('overlay-title');
-    this.overlayMessage = document.getElementById('overlay-message');
-    this.keepGoingBtn = document.getElementById('keep-going-btn');
-    this.overlayUndoBtn = document.getElementById('overlay-undo-btn');
-    this.overlaySmashBtn = document.getElementById('overlay-smash-btn');
-    this.overlaySwapBtn = document.getElementById('overlay-swap-btn');
-    this.overlayDoubleBtn = document.getElementById('overlay-double-btn');
-    this.tryAgainBtn = document.getElementById('try-again-btn');
+    this.overlay = q('game-overlay', 'game-overlay');
+    this.overlayTitle = q('overlay-title', 'overlay-title');
+    this.overlayMessage = q('overlay-message', 'overlay-message');
+    this.keepGoingBtn = q('keep-going-btn', 'keep-going-btn');
+    this.overlayUndoBtn = q('overlay-undo-btn', 'overlay-undo-btn');
+    this.overlaySmashBtn = q('overlay-smash-btn', 'overlay-smash-btn');
+    this.overlaySwapBtn = q('overlay-swap-btn', 'overlay-swap-btn');
+    this.overlayDoubleBtn = q('overlay-double-btn', 'overlay-double-btn');
+    this.tryAgainBtn = q('try-again-btn', 'try-again-btn');
 
-    this.sizeButtons = Array.from(document.querySelectorAll('.size-btn'));
-    this.resetUnlocksBtn = document.getElementById('reset-unlocks-btn');
+    this.sizeButtons = Array.from(this.rootEl.querySelectorAll('.size-btn'));
+    this.resetUnlocksBtn = q('reset-unlocks-btn', 'reset-unlocks-btn');
 
     // Internal State
     this.nextTileId = 1;
     this.maxUnlockedSize = this.computeMaxUnlockedSize();
-    const savedSize = parseInt(localStorage.getItem(STORAGE_KEYS.ACTIVE_SIZE), 10);
+    const savedSize = parseInt(localStorage.getItem(this.getActiveSizeKey()), 10);
     this.size =
       savedSize >= 4 && savedSize <= 10 && savedSize <= this.maxUnlockedSize ? savedSize : 4;
 
@@ -542,15 +599,31 @@ class Game8192 {
     this.switchGridSize(this.size, false);
   }
 
+  getStateKey(size = this.size) {
+    return `${STORAGE_KEYS.STATE_PREFIX}${size}${this.storageSuffix}`;
+  }
+
+  getBestKey(size = this.size) {
+    return `${STORAGE_KEYS.BEST_PREFIX}${size}${this.storageSuffix}`;
+  }
+
+  getMaxUnlockedKey() {
+    return `${STORAGE_KEYS.MAX_UNLOCKED_SIZE}${this.storageSuffix}`;
+  }
+
+  getActiveSizeKey() {
+    return `${STORAGE_KEYS.ACTIVE_SIZE}${this.storageSuffix}`;
+  }
+
   computeMaxUnlockedSize() {
-    const saved = localStorage.getItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE);
+    const saved = localStorage.getItem(this.getMaxUnlockedKey());
     if (saved !== null) {
       const parsed = parseInt(saved, 10);
       return Math.min(10, Math.max(4, parsed || 4));
     }
     let unlocked = 4;
     for (let s = 4; s < 10; s++) {
-      const bestForSize = parseInt(localStorage.getItem(STORAGE_KEYS.BEST_PREFIX + s), 10) || 0;
+      const bestForSize = parseInt(localStorage.getItem(this.getBestKey(s)), 10) || 0;
       const requiredTile = getUnlockTargetForSize(s);
       if (bestForSize >= requiredTile && s >= unlocked) {
         unlocked = s + 1;
@@ -559,18 +632,18 @@ class Game8192 {
       }
     }
     unlocked = Math.min(10, unlocked);
-    localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, String(unlocked));
+    localStorage.setItem(this.getMaxUnlockedKey(), String(unlocked));
     return unlocked;
   }
 
   resetGridUnlocks() {
     this.maxUnlockedSize = 4;
-    localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, '4');
+    localStorage.setItem(this.getMaxUnlockedKey(), '4');
 
     // Clear saved boards and best blocks so the player can re-unlock 5x5..10x10 cleanly
     for (let s = 4; s <= 10; s++) {
-      localStorage.removeItem(STORAGE_KEYS.STATE_PREFIX + s);
-      localStorage.removeItem(STORAGE_KEYS.BEST_PREFIX + s);
+      localStorage.removeItem(this.getStateKey(s));
+      localStorage.removeItem(this.getBestKey(s));
     }
 
     this.bestScore = 0;
@@ -626,15 +699,15 @@ class Game8192 {
   }
 
   updateThemeUI(theme) {
+    if (!this.themeToggleBtn) return;
     THEMES.forEach((t) => {
       const icon = this.themeToggleBtn.querySelector(`.theme-icon-${t}`);
       if (icon) {
         icon.classList.toggle('hidden', t !== theme);
       }
     });
-    const labelEl = document.getElementById('theme-label');
-    if (labelEl) {
-      labelEl.textContent = THEME_LABELS[theme] || 'Light';
+    if (this.themeLabelEl) {
+      this.themeLabelEl.textContent = THEME_LABELS[theme] || 'Light';
     }
   }
 
@@ -654,12 +727,17 @@ class Game8192 {
     if (!this.musicToggleBtn) return;
     const onIcon = this.musicToggleBtn.querySelector('.music-on-icon');
     const offIcon = this.musicToggleBtn.querySelector('.music-off-icon');
-    if (this.sound.musicEnabled) {
+    const mode = this.sound.musicMode || (this.sound.musicEnabled ? 'normal' : 'off');
+    if (mode !== 'off') {
       onIcon.classList.remove('hidden');
       offIcon.classList.add('hidden');
     } else {
       onIcon.classList.add('hidden');
       offIcon.classList.remove('hidden');
+    }
+    this.musicToggleBtn.classList.toggle('canon-active', mode === 'canon');
+    if (this.musicLabelEl) {
+      this.musicLabelEl.textContent = mode === 'canon' ? '2×' : mode === 'normal' ? '1×' : 'Off';
     }
   }
 
@@ -683,7 +761,7 @@ class Game8192 {
     }
 
     this.size = newSize;
-    localStorage.setItem(STORAGE_KEYS.ACTIVE_SIZE, String(this.size));
+    localStorage.setItem(this.getActiveSizeKey(), String(this.size));
 
     // Update size selector buttons & board attribute
     this.updateSizeButtonsUI();
@@ -699,7 +777,7 @@ class Game8192 {
     }
 
     // Load best tile for this grid size
-    this.bestScore = parseInt(localStorage.getItem(STORAGE_KEYS.BEST_PREFIX + this.size), 10) || 0;
+    this.bestScore = parseInt(localStorage.getItem(this.getBestKey(this.size)), 10) || 0;
 
     // Load saved game state for this grid size or start fresh
     if (!this.loadState()) {
@@ -788,8 +866,8 @@ class Game8192 {
     };
 
     try {
-      localStorage.setItem(STORAGE_KEYS.STATE_PREFIX + this.size, JSON.stringify(payload));
-      localStorage.setItem(STORAGE_KEYS.BEST_PREFIX + this.size, String(this.bestScore));
+      localStorage.setItem(this.getStateKey(this.size), JSON.stringify(payload));
+      localStorage.setItem(this.getBestKey(this.size), String(this.bestScore));
     } catch (e) {
       // Ignore quota errors
     }
@@ -797,7 +875,7 @@ class Game8192 {
 
   loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.STATE_PREFIX + this.size);
+      const raw = localStorage.getItem(this.getStateKey(this.size));
       if (!raw) return false;
       const data = JSON.parse(raw);
       if (!data || data.size !== this.size || !Array.isArray(data.grid)) return false;
@@ -1106,7 +1184,7 @@ class Game8192 {
       this.maxUnlockedSize === this.size
     ) {
       this.maxUnlockedSize = this.size + 1;
-      localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, String(this.maxUnlockedSize));
+      localStorage.setItem(this.getMaxUnlockedKey(), String(this.maxUnlockedSize));
       this.updateSizeButtonsUI(this.maxUnlockedSize);
       earnedPowerup = true;
       this.showToast(`🎉 ${this.maxUnlockedSize}×${this.maxUnlockedSize} Grid Unlocked!`);
@@ -1240,7 +1318,7 @@ class Game8192 {
 
     if (!this.swapFirstTile) {
       this.swapFirstTile = { r, c, id: clickedTile.id };
-      const domEl = document.getElementById(`tile-${clickedTile.id}`);
+      const domEl = document.getElementById(`${this.tileIdPrefix}${clickedTile.id}`);
       if (domEl) {
         domEl.classList.add('swap-selected');
       }
@@ -1341,7 +1419,7 @@ class Game8192 {
     this.grid[r][c] = null;
     this.over = false;
 
-    const domEl = document.getElementById(`tile-${targetTile.id}`);
+    const domEl = document.getElementById(`${this.tileIdPrefix}${targetTile.id}`);
     if (domEl) {
       domEl.classList.add('tile-smashed');
     }
@@ -1422,7 +1500,7 @@ class Game8192 {
       this.maxUnlockedSize === this.size
     ) {
       this.maxUnlockedSize = this.size + 1;
-      localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, String(this.maxUnlockedSize));
+      localStorage.setItem(this.getMaxUnlockedKey(), String(this.maxUnlockedSize));
       this.updateSizeButtonsUI(this.maxUnlockedSize);
       unlockedNewGrid = true;
       this.showToast(`🎉 ${this.maxUnlockedSize}×${this.maxUnlockedSize} Grid Unlocked!`);
@@ -1509,7 +1587,7 @@ class Game8192 {
     const activeDomIds = new Set();
 
     const upsertTileElement = (tileObj, isGhost = false) => {
-      const domId = `tile-${tileObj.id}`;
+      const domId = `${this.tileIdPrefix}${tileObj.id}`;
       activeDomIds.add(domId);
 
       let el = document.getElementById(domId);
@@ -1698,6 +1776,7 @@ class Game8192 {
 
   openSecretModal() {
     if (!this.secretModal) return;
+    window.activeSecretTargetGame = this;
     this.setSmashMode(false);
     this.setSwapMode(false);
     this.setDoubleMode(false);
@@ -1717,26 +1796,31 @@ class Game8192 {
     }
   }
 
+  unlockSecretRewards() {
+    this.powerupCapBroken = true;
+    this.undosRemaining = SECRET_POWERUP_AMOUNT;
+    this.smashesRemaining = SECRET_POWERUP_AMOUNT;
+    this.swapsRemaining = SECRET_POWERUP_AMOUNT;
+    this.doublesRemaining = SECRET_POWERUP_AMOUNT;
+
+    this.maxUnlockedSize = 10;
+    localStorage.setItem(this.getMaxUnlockedKey(), '10');
+    this.updateSizeButtonsUI(10);
+
+    this.pulseUndoBadge();
+    this.pulseSmashBadge();
+    this.pulseSwapBadge();
+    this.pulseDoubleBadge();
+    this.saveState();
+    this.updateUI();
+  }
+
   handleSecretPassword(rawPassword) {
     const cleaned = String(rawPassword || '').trim().toLowerCase();
     if (cleaned === SECRET_PASSWORD) {
-      this.powerupCapBroken = true;
-      this.undosRemaining = SECRET_POWERUP_AMOUNT;
-      this.smashesRemaining = SECRET_POWERUP_AMOUNT;
-      this.swapsRemaining = SECRET_POWERUP_AMOUNT;
-      this.doublesRemaining = SECRET_POWERUP_AMOUNT;
-
-      this.maxUnlockedSize = 10;
-      localStorage.setItem(STORAGE_KEYS.MAX_UNLOCKED_SIZE, '10');
-      this.updateSizeButtonsUI(10);
-
-      this.pulseUndoBadge();
-      this.pulseSmashBadge();
-      this.pulseSwapBadge();
-      this.pulseDoubleBadge();
+      const games = Array.isArray(window.games8192) && window.games8192.length > 0 ? window.games8192 : [this];
+      games.forEach((g) => g.unlockSecretRewards());
       this.sound.playWinFanfare();
-      this.saveState();
-      this.updateUI();
       this.closeSecretModal();
       this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10) & 100 of every Power-Up!');
     } else {
@@ -1822,15 +1906,31 @@ class Game8192 {
 
     this.soundToggleBtn.addEventListener('click', () => {
       this.sound.toggle();
-      this.updateSoundUI();
+      const games = Array.isArray(window.games8192) ? window.games8192 : [this];
+      games.forEach((g) => g.updateSoundUI());
     });
 
     if (this.musicToggleBtn) {
       this.musicToggleBtn.addEventListener('click', () => {
-        const enabled = this.sound.toggleMusic();
-        this.updateMusicUI();
+        const mode = this.sound.toggleMusic();
+        const games = Array.isArray(window.games8192) ? window.games8192 : [this];
+        games.forEach((g) => g.updateMusicUI());
         const track = THEME_MUSIC[this.sound.currentTheme] || THEME_MUSIC.light;
-        this.showToast(enabled ? `🎵 Music On: ${track.name}` : '🔇 Music Muted');
+        if (mode === 'canon') {
+          this.showToast(`🎵🎵 2× Overlap Mode (+0.4s): ${track.name}`);
+        } else if (mode === 'normal') {
+          this.showToast(`🎵 Music On (1×): ${track.name}`);
+        } else {
+          this.showToast('🔇 Music Muted');
+        }
+      });
+    }
+
+    if (this.splitToggleBtn) {
+      this.splitToggleBtn.addEventListener('click', () => {
+        if (typeof window.toggleSplitScreen === 'function') {
+          window.toggleSplitScreen();
+        }
       });
     }
 
@@ -1845,6 +1945,9 @@ class Game8192 {
 
     this.themeToggleBtn.addEventListener('click', () => {
       this.toggleTheme();
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const games = Array.isArray(window.games8192) ? window.games8192 : [this];
+      games.forEach((g) => g.updateThemeUI(currentTheme));
     });
 
     if (this.guideBtn && this.guideModal) {
@@ -1852,123 +1955,163 @@ class Game8192 {
         this.guideModal.classList.remove('hidden');
       });
     }
-    if (this.guideCloseBtn && this.guideModal) {
-      this.guideCloseBtn.addEventListener('click', () => {
-        this.guideModal.classList.add('hidden');
-      });
-    }
-    if (this.guideModal) {
-      this.guideModal.addEventListener('click', (e) => {
-        if (e.target === this.guideModal) {
-          this.guideModal.classList.add('hidden');
-        }
-      });
-    }
-
     if (this.secretBtn) {
       this.secretBtn.addEventListener('click', () => {
         this.openSecretModal();
       });
     }
-    if (this.secretCloseBtn) {
-      this.secretCloseBtn.addEventListener('click', () => {
-        this.closeSecretModal();
-      });
-    }
-    if (this.secretModal) {
-      this.secretModal.addEventListener('click', (e) => {
-        if (e.target === this.secretModal) {
-          this.closeSecretModal();
-        }
-      });
-    }
-    if (this.secretForm) {
-      this.secretForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleSecretPassword(this.secretInput ? this.secretInput.value : '');
-      });
-    }
 
-    // Keyboard Controls (Arrow keys, WASD, U/Backspace for Undo, X for Smash, C for Swap, G for Guide, Escape to cancel/close, N for New Game)
-    window.addEventListener('keydown', (e) => {
-      if (e.ctrlKey || e.altKey || e.metaKey) return;
-
-      const isSecretOpen = this.secretModal && !this.secretModal.classList.contains('hidden');
-      if (isSecretOpen) {
-        if (e.code === 'Escape') {
-          e.preventDefault();
-          this.closeSecretModal();
-        }
-        return;
-      }
-
-      const isGuideOpen = this.guideModal && !this.guideModal.classList.contains('hidden');
-      if (isGuideOpen) {
-        if (e.code === 'Escape' || e.code === 'KeyG') {
-          e.preventDefault();
+    // Only bind shared modal & window-level keyboard listeners on Player 1 instance
+    if (this.playerIndex === 1) {
+      if (this.guideCloseBtn && this.guideModal) {
+        this.guideCloseBtn.addEventListener('click', () => {
           this.guideModal.classList.add('hidden');
-        }
-        return;
+        });
+      }
+      if (this.guideModal) {
+        this.guideModal.addEventListener('click', (e) => {
+          if (e.target === this.guideModal) {
+            this.guideModal.classList.add('hidden');
+          }
+        });
+      }
+      if (this.secretCloseBtn) {
+        this.secretCloseBtn.addEventListener('click', () => {
+          this.closeSecretModal();
+        });
+      }
+      if (this.secretModal) {
+        this.secretModal.addEventListener('click', (e) => {
+          if (e.target === this.secretModal) {
+            this.closeSecretModal();
+          }
+        });
+      }
+      if (this.secretForm) {
+        this.secretForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const targetGame = window.activeSecretTargetGame || this;
+          targetGame.handleSecretPassword(this.secretInput ? this.secretInput.value : '');
+        });
       }
 
-      const keyMap = {
-        ArrowUp: 'up',
-        KeyW: 'up',
-        ArrowDown: 'down',
-        KeyS: 'down',
-        ArrowLeft: 'left',
-        KeyA: 'left',
-        ArrowRight: 'right',
-        KeyD: 'right',
-      };
+      // Keyboard Controls:
+      // - 1-Screen Mode: Both WASD and Arrow Keys control Screen 1
+      // - 2-Screen Split Mode: WASD controls Screen 1 (left/top), Arrow Keys control Screen 2 (right/bottom)
+      window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-      if (keyMap[e.code]) {
-        e.preventDefault();
-        this.move(keyMap[e.code]);
-      } else if (e.code === 'KeyU' || e.code === 'Backspace') {
-        e.preventDefault();
-        this.undo();
-      } else if (e.code === 'KeyX') {
-        e.preventDefault();
-        this.toggleSmashMode();
-      } else if (e.code === 'KeyC') {
-        e.preventDefault();
-        this.toggleSwapMode();
-      } else if (e.code === 'KeyV') {
-        e.preventDefault();
-        this.toggleDoubleMode();
-      } else if (e.code === 'KeyM') {
-        e.preventDefault();
-        const enabled = this.sound.toggleMusic();
-        this.updateMusicUI();
-        const track = THEME_MUSIC[this.sound.currentTheme] || THEME_MUSIC.light;
-        this.showToast(enabled ? `🎵 Music On: ${track.name}` : '🔇 Music Muted');
-      } else if (e.code === 'KeyG') {
-        e.preventDefault();
-        if (this.guideModal) {
-          this.guideModal.classList.remove('hidden');
+        const isSecretOpen = this.secretModal && !this.secretModal.classList.contains('hidden');
+        if (isSecretOpen) {
+          if (e.code === 'Escape') {
+            e.preventDefault();
+            this.closeSecretModal();
+          }
+          return;
         }
-      } else if (e.code === 'Escape' && (this.smashMode || this.swapMode || this.doubleMode)) {
-        e.preventDefault();
-        this.setSmashMode(false);
-        this.setSwapMode(false);
-        this.setDoubleMode(false);
-      } else if (e.code === 'KeyN') {
-        e.preventDefault();
-        this.startNewGame();
-      }
-    });
 
-    // Touch / Pointer Swipe Controls on the Board
+        const isGuideOpen = this.guideModal && !this.guideModal.classList.contains('hidden');
+        if (isGuideOpen) {
+          if (e.code === 'Escape' || e.code === 'KeyG') {
+            e.preventDefault();
+            this.guideModal.classList.add('hidden');
+          }
+          return;
+        }
+
+        const isSplit = Boolean(window.isSplitScreenActive);
+        const game1 = this;
+        const game2 = window.game8192P2;
+
+        const wasdMap = {
+          KeyW: 'up',
+          KeyS: 'down',
+          KeyA: 'left',
+          KeyD: 'right',
+        };
+        const arrowMap = {
+          ArrowUp: 'up',
+          ArrowDown: 'down',
+          ArrowLeft: 'left',
+          ArrowRight: 'right',
+        };
+
+        if (wasdMap[e.code]) {
+          e.preventDefault();
+          game1.move(wasdMap[e.code]);
+        } else if (arrowMap[e.code]) {
+          e.preventDefault();
+          if (isSplit && game2) {
+            game2.move(arrowMap[e.code]);
+          } else {
+            game1.move(arrowMap[e.code]);
+          }
+        } else if (e.code === 'KeyU' || e.code === 'Backspace') {
+          e.preventDefault();
+          game1.undo();
+        } else if (e.code === 'KeyX') {
+          e.preventDefault();
+          game1.toggleSmashMode();
+        } else if (e.code === 'KeyC') {
+          e.preventDefault();
+          game1.toggleSwapMode();
+        } else if (e.code === 'KeyV') {
+          e.preventDefault();
+          game1.toggleDoubleMode();
+        } else if (e.code === 'KeyP') {
+          e.preventDefault();
+          if (typeof window.toggleSplitScreen === 'function') {
+            window.toggleSplitScreen();
+          }
+        } else if (e.code === 'KeyM') {
+          e.preventDefault();
+          const mode = this.sound.toggleMusic();
+          const games = Array.isArray(window.games8192) ? window.games8192 : [this];
+          games.forEach((g) => g.updateMusicUI());
+          const track = THEME_MUSIC[this.sound.currentTheme] || THEME_MUSIC.light;
+          if (mode === 'canon') {
+            this.showToast(`🎵🎵 2× Overlap Mode (+0.4s): ${track.name}`);
+          } else if (mode === 'normal') {
+            this.showToast(`🎵 Music On (1×): ${track.name}`);
+          } else {
+            this.showToast('🔇 Music Muted');
+          }
+        } else if (e.code === 'KeyG') {
+          e.preventDefault();
+          if (this.guideModal) {
+            this.guideModal.classList.remove('hidden');
+          }
+        } else if (e.code === 'Escape') {
+          const games = Array.isArray(window.games8192) ? window.games8192 : [this];
+          games.forEach((g) => {
+            if (g.smashMode || g.swapMode || g.doubleMode) {
+              e.preventDefault();
+              g.setSmashMode(false);
+              g.setSwapMode(false);
+              g.setDoubleMode(false);
+            }
+          });
+        } else if (e.code === 'KeyN') {
+          e.preventDefault();
+          game1.startNewGame();
+        }
+      });
+    }
+
+    // Independent Multi-Touch & Mouse Drag Swipe Controls scoped to THIS board only
+    // Using touch identifier tracking so two players can swipe both boards simultaneously on the same screen!
+    let activeTouchId = null;
     let touchStartX = 0;
     let touchStartY = 0;
 
     this.boardContainer.addEventListener(
       'touchstart',
       (e) => {
-        if (e.touches.length > 1) return;
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
+        if (activeTouchId !== null || e.changedTouches.length === 0) return;
+        const touch = e.changedTouches[0];
+        activeTouchId = touch.identifier;
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
       },
       { passive: true }
     );
@@ -1976,34 +2119,130 @@ class Game8192 {
     this.boardContainer.addEventListener(
       'touchmove',
       (e) => {
-        // Prevent page scrolling while swiping inside the board
+        // Prevent page scrolling while swiping inside this board
         e.preventDefault();
       },
       { passive: false }
     );
 
-    this.boardContainer.addEventListener(
-      'touchend',
-      (e) => {
-        if (e.changedTouches.length === 0) return;
-        const dx = e.changedTouches[0].clientX - touchStartX;
-        const dy = e.changedTouches[0].clientY - touchStartY;
-        const absDx = Math.abs(dx);
-        const absDy = Math.abs(dy);
+    const handleTouchFinish = (e) => {
+      if (activeTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.identifier === activeTouchId) {
+          activeTouchId = null;
+          const dx = touch.clientX - touchStartX;
+          const dy = touch.clientY - touchStartY;
+          const absDx = Math.abs(dx);
+          const absDy = Math.abs(dy);
 
-        if (Math.max(absDx, absDy) > 26) {
-          if (absDx > absDy) {
-            this.move(dx > 0 ? 'right' : 'left');
-          } else {
-            this.move(dy > 0 ? 'down' : 'up');
+          if (Math.max(absDx, absDy) > 26) {
+            if (absDx > absDy) {
+              this.move(dx > 0 ? 'right' : 'left');
+            } else {
+              this.move(dy > 0 ? 'down' : 'up');
+            }
           }
+          break;
         }
+      }
+    };
+
+    this.boardContainer.addEventListener('touchend', handleTouchFinish, { passive: true });
+    this.boardContainer.addEventListener(
+      'touchcancel',
+      () => {
+        activeTouchId = null;
       },
       { passive: true }
     );
+
+    // Also allow mouse drag-swiping on each individual board
+    let mouseDown = false;
+    let mouseStartX = 0;
+    let mouseStartY = 0;
+
+    this.boardContainer.addEventListener('mousedown', (e) => {
+      if (this.smashMode || this.swapMode || this.doubleMode) return;
+      mouseDown = true;
+      mouseStartX = e.clientX;
+      mouseStartY = e.clientY;
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (!mouseDown) return;
+      mouseDown = false;
+      const dx = e.clientX - mouseStartX;
+      const dy = e.clientY - mouseStartY;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+      if (Math.max(absDx, absDy) > 30) {
+        if (absDx > absDy) {
+          this.move(dx > 0 ? 'right' : 'left');
+        } else {
+          this.move(dy > 0 ? 'down' : 'up');
+        }
+      }
+    });
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  window.game8192 = new Game8192();
+  const wrapper = document.getElementById('split-screen-wrapper');
+  const pane1 = document.getElementById('game-pane-1');
+
+  // Clone Screen 1 template before initializing so Screen 2 starts with clean markup
+  const pane2Template = pane1.cloneNode(true);
+  pane2Template.id = 'game-pane-2';
+  pane2Template.setAttribute('data-player', '2');
+  pane2Template.classList.add('hidden');
+  // Remove duplicate element IDs inside pane2 (Game8192 uses data-role queries)
+  Array.from(pane2Template.querySelectorAll('[id]')).forEach((el) => {
+    if (el !== pane2Template) {
+      el.removeAttribute('id');
+    }
+  });
+  const badge2 = pane2Template.querySelector('[data-role="player-badge"]');
+  if (badge2) {
+    badge2.textContent = 'P2 • Arrows / Swipe';
+  }
+  wrapper.appendChild(pane2Template);
+
+  const game1 = new Game8192(pane1, 1, null);
+  const game2 = new Game8192(pane2Template, 2, game1.sound);
+
+  window.game8192 = game1;
+  window.game8192P2 = game2;
+  window.games8192 = [game1, game2];
+
+  const applySplitScreenState = (active) => {
+    window.isSplitScreenActive = Boolean(active);
+    localStorage.setItem(STORAGE_KEYS.SPLIT_SCREEN, String(window.isSplitScreenActive));
+    wrapper.classList.toggle('split-active', window.isSplitScreenActive);
+    pane2Template.classList.toggle('hidden', !window.isSplitScreenActive);
+
+    window.games8192.forEach((g) => {
+      if (g.playerBadgeEl) {
+        g.playerBadgeEl.classList.toggle('hidden', !window.isSplitScreenActive);
+      }
+      if (g.splitToggleBtn) {
+        g.splitToggleBtn.classList.toggle('active', window.isSplitScreenActive);
+      }
+      if (g.splitLabelEl) {
+        g.splitLabelEl.textContent = window.isSplitScreenActive ? '1 Screen' : '2 Screens';
+      }
+    });
+  };
+
+  window.toggleSplitScreen = () => {
+    applySplitScreenState(!window.isSplitScreenActive);
+    game1.showToast(
+      window.isSplitScreenActive
+        ? '🎮 2-Screen Mode On! Swipe either board independently!'
+        : '1-Screen Mode Active'
+    );
+  };
+
+  const savedSplit = localStorage.getItem(STORAGE_KEYS.SPLIT_SCREEN) === 'true';
+  applySplitScreenState(savedSplit);
 });

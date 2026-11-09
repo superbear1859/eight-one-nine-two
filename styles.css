@@ -187,12 +187,70 @@ body {
   overflow-x: hidden;
 }
 
+.split-screen-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.split-screen-wrapper.split-active {
+  max-width: 1040px;
+}
+
+.split-screen-wrapper.split-active .app-container {
+  --board-size: min(45vw, 450px);
+  max-width: var(--board-size);
+  flex: 1 1 0;
+}
+
+@media (max-width: 820px) {
+  .split-screen-wrapper.split-active {
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .split-screen-wrapper.split-active .app-container {
+    --board-size: min(92vw, 440px);
+    max-width: 470px;
+  }
+
+  .split-screen-wrapper.split-active .app-container + .app-container {
+    border-top: 2px dashed rgba(119, 110, 101, 0.35);
+    padding-top: 20px;
+  }
+}
+
 .app-container {
   width: 100%;
   max-width: 470px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.player-badge {
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+[data-player="2"] .player-badge {
+  background: linear-gradient(135deg, #06b6d4, #10b981);
 }
 
 /* ==========================================================================
@@ -439,6 +497,8 @@ body {
 .smash-btn,
 .swap-btn,
 .double-btn,
+.split-btn,
+.music-btn,
 .theme-btn,
 .guide-btn {
   background-color: var(--btn-secondary-bg);
@@ -450,9 +510,28 @@ body {
 .smash-btn:hover:not(:disabled),
 .swap-btn:hover:not(:disabled),
 .double-btn:hover:not(:disabled),
+.split-btn:hover:not(:disabled),
+.music-btn:hover:not(:disabled),
 .theme-btn:hover:not(:disabled),
 .guide-btn:hover:not(:disabled) {
   background-color: var(--btn-secondary-hover);
+}
+
+.music-btn.canon-active {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.45);
+}
+
+.music-mode-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.split-btn.active {
+  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.45);
 }
 
 .undo-btn:disabled,
@@ -1495,6 +1574,8 @@ body {
   .smash-btn,
   .swap-btn,
   .double-btn,
+  .split-btn,
+  .music-btn,
   .theme-btn,
   .guide-btn,
   .new-game-btn {
