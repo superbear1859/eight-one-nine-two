@@ -115,43 +115,67 @@ const THEME_MUSIC = {
       174.61, 0, 261.63, 0, 196.0, 0, 246.94, 0,
     ],
   },
-  // "Soon May the Wellerman Come" (Sea Shanty chorus in C minor, 16-step 16th-note grid)
+  // "Soon May the Wellerman Come" (Verse + Chorus in A minor, 16-step 16th-note grid)
   'rainbow-dark': {
     name: 'The Wellerman',
-    stepMs: 138,
-    leadType: 'triangle',
-    leadGain: 0.042,
+    stepMs: 145,
+    leadType: 'sawtooth',
+    leadGain: 0.028,
     leadDecay: 0.25,
-    bassType: 'sawtooth',
-    bassGain: 0.024,
-    bassDecay: 0.22,
+    bassType: 'triangle',
+    bassGain: 0.042,
+    bassDecay: 0.26,
     lead: [
-      // Bar 1 (Ab -> Eb): "Soon may the Wel-ler-man come" (C5, G4-G4, Ab4-F4, G4-Bb4)
-      523.25, 0, 0, 0, 392.0, 0, 392.0, 0,
-      415.3, 0, 349.23, 0, 392.0, 0, 466.16, 0,
-      // Bar 2 (Cm): "To bring us su-gar and tea and rum" (Eb4, G4, C4, C5, C5, B4-C5, D5)
-      311.13, 392.0, 261.63, 523.25, 0, 0, 523.25, 0,
-      493.88, 523.25, 587.33, 0, 0, 0, 0, 0,
-      // Bar 3 (Ab -> Eb): "One day, when the tongu-ing is done" (C5, G4-G4, Ab4-F4, G4-Bb4)
-      523.25, 0, 0, 0, 392.0, 0, 392.0, 0,
-      415.3, 0, 349.23, 0, 392.0, 0, 466.16, 0,
-      // Bar 4 (G -> Cm): "We'll take our leave and go!" (G4, G4, F4, Eb4, D4, C4)
-      392.0, 0, 392.0, 349.23, 0, 0, 311.13, 293.66,
-      261.63, 0, 0, 0, 0, 0, 392.0, 0,
+      // Verse Line 1: "(There) once was a ship that put to sea" — A4(4), A4(2), A4(2), C5(4), E5(4)
+      440.0, 0, 0, 0, 440.0, 0, 440.0, 0,
+      523.25, 0, 0, 0, 659.25, 0, 523.25, 440.0,
+      // Verse Line 2: "(The) name of the ship was the Bil-ly o' Tea" — D5(4), D5(2), D5(2), D5(2), C5(2), B4(2), C5(2)
+      587.33, 0, 0, 0, 587.33, 0, 587.33, 0,
+      587.33, 0, 523.25, 0, 493.88, 0, 523.25, 440.0,
+      // Verse Line 3: "(The) winds blew up, her bow dipped down" — A4(4), A4(2), A4(2), C5(4), E5(4)
+      440.0, 0, 0, 0, 440.0, 0, 440.0, 0,
+      523.25, 0, 0, 0, 659.25, 0, 0, 659.25,
+      // Verse Line 4: "(Oh) blow, my bul-ly boys, blow (Huh!)" — E5(4), D5(2), C5(2), B4(4), A4(4)
+      659.25, 0, 0, 0, 587.33, 0, 523.25, 0,
+      493.88, 0, 0, 0, 440.0, 0, 0, 0,
+      // Chorus Line 1: "Soon may the Wel-ler-man come" — F5(6), F5(2), C5(4), C5(4)
+      698.46, 0, 0, 0, 0, 0, 698.46, 0,
+      523.25, 0, 0, 0, 523.25, 0, 523.25, 587.33,
+      // Chorus Line 2: "(To) bring us su-gar and tea and rum" — E5(4), E5(2), E5(2), E5(2), D5(2), C5(2), D5(2)
+      659.25, 0, 0, 0, 659.25, 0, 659.25, 0,
+      659.25, 0, 587.33, 0, 523.25, 0, 587.33, 0,
+      // Chorus Line 3: "One day, when the tongu-ing is done" — F5(6), F5(2), C5(2), C5(2), C5(2), D5(2)
+      698.46, 0, 0, 0, 0, 0, 698.46, 0,
+      523.25, 0, 523.25, 0, 523.25, 0, 587.33, 0,
+      // Chorus Line 4: "We'll take our leave and go!" — E5(4), D5(2), C5(2), B4(4), A4(4)
+      659.25, 0, 0, 0, 587.33, 0, 523.25, 0,
+      493.88, 0, 0, 0, 440.0, 0, 329.63, 0,
     ],
     bass: [
-      // Bar 1: Ab2 -> Eb2 sea shanty stomp
-      103.83, 0, 207.65, 0, 103.83, 0, 207.65, 0,
-      155.56, 0, 311.13, 0, 155.56, 0, 311.13, 0,
-      // Bar 2: C3 -> G2
-      130.81, 0, 261.63, 0, 130.81, 0, 261.63, 0,
-      98.0, 0, 196.0, 0, 98.0, 0, 196.0, 0,
-      // Bar 3: Ab2 -> Eb2
-      103.83, 0, 207.65, 0, 103.83, 0, 207.65, 0,
-      155.56, 0, 311.13, 0, 155.56, 0, 311.13, 0,
-      // Bar 4: G2 -> C3
-      98.0, 0, 196.0, 0, 98.0, 0, 196.0, 0,
-      130.81, 0, 261.63, 0, 130.81, 0, 196.0, 0,
+      // Verse Line 1: Am (A2 - E3)
+      110.0, 0, 164.81, 0, 110.0, 0, 164.81, 0,
+      110.0, 0, 164.81, 0, 110.0, 0, 164.81, 0,
+      // Verse Line 2: Dm -> Am
+      146.83, 0, 220.0, 0, 146.83, 0, 220.0, 0,
+      110.0, 0, 164.81, 0, 110.0, 0, 164.81, 0,
+      // Verse Line 3: Am
+      110.0, 0, 164.81, 0, 110.0, 0, 164.81, 0,
+      110.0, 0, 164.81, 0, 110.0, 0, 164.81, 0,
+      // Verse Line 4: E -> Am
+      164.81, 0, 246.94, 0, 164.81, 0, 246.94, 0,
+      164.81, 0, 123.47, 0, 110.0, 0, 220.0, 0,
+      // Chorus Line 1: F -> C
+      174.61, 0, 261.63, 0, 174.61, 0, 261.63, 0,
+      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
+      // Chorus Line 2: Dm -> Am
+      146.83, 0, 220.0, 0, 146.83, 0, 220.0, 0,
+      110.0, 0, 164.81, 0, 110.0, 0, 164.81, 0,
+      // Chorus Line 3: F -> C
+      174.61, 0, 261.63, 0, 174.61, 0, 261.63, 0,
+      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
+      // Chorus Line 4: E -> Am
+      164.81, 0, 246.94, 0, 164.81, 0, 246.94, 0,
+      164.81, 0, 123.47, 0, 110.0, 0, 220.0, 0,
     ],
   },
   'neon-light': {
@@ -393,11 +417,19 @@ class SoundEngine {
       gain.gain.linearRampToValueAtTime(track.leadGain, now + 0.018);
       gain.gain.exponentialRampToValueAtTime(0.0008, now + track.leadDecay);
 
-      if (this.currentTheme === 'neon-dark' || this.currentTheme === 'neon-rainbow-dark') {
+      if (
+        this.currentTheme === 'neon-dark' ||
+        this.currentTheme === 'neon-rainbow-dark' ||
+        this.currentTheme === 'rainbow-dark'
+      ) {
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(
-          this.currentTheme === 'neon-rainbow-dark' ? 2400 : 1650,
+          this.currentTheme === 'neon-rainbow-dark'
+            ? 2400
+            : this.currentTheme === 'rainbow-dark'
+            ? 1900
+            : 1650,
           now
         );
         osc.connect(filter);
