@@ -535,6 +535,8 @@ class Game8192 {
     this.doubleCountEl = q('double-count', 'double-count');
     this.splitToggleBtn = q('split-toggle', 'split-toggle');
     this.splitLabelEl = q('split-label', 'split-label');
+    this.battleToggleBtn = q('battle-toggle', 'battle-toggle');
+    this.battleLabelEl = q('battle-label', 'battle-label');
     this.playerBadgeEl = q('player-badge', 'player-badge');
     this.newGameBtn = q('new-game-btn', 'new-game-btn');
     this.soundToggleBtn = q('sound-toggle', 'sound-toggle');
@@ -1720,6 +1722,10 @@ class Game8192 {
       this.overlay.classList.add('hidden');
       this.overlay.classList.remove('win-state');
     }
+
+    if (typeof window.onBattlePlayerUpdate === 'function') {
+      window.onBattlePlayerUpdate(this);
+    }
   }
 
   triggerScoreAddition(delta) {
@@ -1934,6 +1940,14 @@ class Game8192 {
       });
     }
 
+    if (this.battleToggleBtn) {
+      this.battleToggleBtn.addEventListener('click', () => {
+        if (typeof window.openBattleModal === 'function') {
+          window.openBattleModal();
+        }
+      });
+    }
+
     // Unlock Web Audio context on first pointer or key interaction so background music starts automatically
     const unlockAudioOnce = () => {
       this.sound.initContext();
@@ -2019,6 +2033,20 @@ class Game8192 {
           return;
         }
 
+        const battleModal = document.getElementById('battle-modal');
+        const battleResultsModal = document.getElementById('battle-results-modal');
+        const isBattleModalOpen = battleModal && !battleModal.classList.contains('hidden');
+        const isBattleResultsOpen =
+          battleResultsModal && !battleResultsModal.classList.contains('hidden');
+        if (isBattleModalOpen || isBattleResultsOpen) {
+          if (e.code === 'Escape') {
+            e.preventDefault();
+            if (isBattleModalOpen) battleModal.classList.add('hidden');
+            if (isBattleResultsOpen) battleResultsModal.classList.add('hidden');
+          }
+          return;
+        }
+
         const screenCount = window.activeScreenCount || 1;
         const game1 = this;
         const game2 = window.game8192P2;
@@ -2082,6 +2110,11 @@ class Game8192 {
           e.preventDefault();
           if (typeof window.toggleSplitScreen === 'function') {
             window.toggleSplitScreen();
+          }
+        } else if (e.code === 'KeyB') {
+          e.preventDefault();
+          if (typeof window.openBattleModal === 'function') {
+            window.openBattleModal();
           }
         } else if (e.code === 'KeyM') {
           e.preventDefault();
@@ -2297,4 +2330,389 @@ document.addEventListener('DOMContentLoaded', () => {
     initialCount = Number(savedRaw);
   }
   applyScreenCount(initialCount);
+
+  /* ------------------------------------------------------------------------
+     Split-Screen Battle Mode Controller
+     ------------------------------------------------------------------------ */
+  const battleHud = document.getElementById('battle-hud');
+  const battleHudMode = document.getElementById('battle-hud-mode');
+  const battleHudTimer = document.getElementById('battle-hud-timer');
+  const battleHudStandings = document.getElementById('battle-hud-standings');
+  const battleRestartBtn = document.getElementById('battle-restart-btn');
+  const battleStopBtn = document.getElementById('battle-stop-btn');
+
+  const battleModal = document.getElementById('battle-modal');
+  const battleCloseBtn = document.getElementById('battle-close-btn');
+  const battleDurationGroup = document.getElementById('battle-duration-group');
+  const battleStartBtn = document.getElementById('battle-start-btn');
+
+  const battleResultsModal = document.getElementById('battle-results-modal');
+  const battleResultsCloseBtn = document.getElementById('battle-results-close-btn');
+  const battleWinnerBanner = document.getElementById('battle-winner-banner');
+  const battleWinnerSub = document.getElementById('battle-winner-sub');
+  const battleScoreboard = document.getElementById('battle-scoreboard');
+  const battleRematchBtn = document.getElementById('battle-rematch-btn');
+  const battleChangeModeBtn = document.getElementById('battle-change-mode-btn');
+  const battleExitBtn = document.getElementById('battle-exit-btn');
+
+  const battleState = {
+    active: false,
+    finished: false,
+    type: 'timer', // 'timer' (Highest Number Timed) | 'race10' (Race to 10x10 Grid)
+    players: 2,
+    durationSec: 120,
+    remainingSec: 120,
+    elapsedSec: 0,
+    intervalId: null,
+  };
+
+  const formatClock = (totalSeconds) => {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const getActiveBattleGames = () => {
+    return window.games8192.slice(0, battleState.players);
+  };
+
+  const comparePlayersForBattle = (a, b) => {
+    if (battleState.type === 'race10') {
+      // Rank by highest unlocked grid size, then current grid size, then highest tile on board, then score
+      if (b.maxUnlockedSize !== a.maxUnlockedSize) {
+        return b.maxUnlockedSize - a.maxUnlockedSize;
+      }
+      if (b.size !== a.size) {
+        return b.size - a.size;
+      }
+      const maxA = a.getHighestTileOnBoard();
+      const maxB = b.getHighestTileOnBoard();
+      if (maxB !== maxA) return maxB - maxA;
+      return b.score - a.score;
+    }
+    // 'timer': Highest tile on board wins (or bestScore during this battle), tie-breaker is score
+    const tileA = Math.max(a.getHighestTileOnBoard(), a.bestScore);
+    const tileB = Math.max(b.getHighestTileOnBoard(), b.bestScore);
+    if (tileB !== tileA) return tileB - tileA;
+    return b.score - a.score;
+  };
+
+  const updateBattleHud = () => {
+    if (!battleState.active || !battleHud) return;
+
+    const participants = getActiveBattleGames();
+    const ranked = [...participants].sort(comparePlayersForBattle);
+    const topPlayer = ranked[0];
+
+    // Highlight leader board(s)
+    window.games8192.forEach((g) => {
+      const isParticipant = g.playerIndex <= battleState.players;
+      const isTiedForFirst =
+        isParticipant && topPlayer && comparePlayersForBattle(g, topPlayer) === 0;
+      g.rootEl.classList.toggle('battle-leader', Boolean(isTiedForFirst));
+    });
+
+    // Render live standings chips
+    if (battleHudStandings) {
+      battleHudStandings.innerHTML = participants
+        .map((g) => {
+          const isLeader = topPlayer && comparePlayersForBattle(g, topPlayer) === 0;
+          const highestTile = Math.max(g.getHighestTileOnBoard(), g.bestScore);
+          const statText =
+            battleState.type === 'race10'
+              ? `${g.maxUnlockedSize}×${g.maxUnlockedSize} • Tile ${highestTile}`
+              : `Tile ${highestTile} (${g.score.toLocaleString()} pts)`;
+          return `<div class="battle-player-chip ${isLeader ? 'leader' : ''}" data-player="${g.playerIndex}">
+            <span class="battle-chip-tag">P${g.playerIndex}</span>
+            <span>${statText}</span>
+            ${isLeader ? '<span>👑</span>' : ''}
+          </div>`;
+        })
+        .join('');
+    }
+  };
+
+  const clearBattleTimer = () => {
+    if (battleState.intervalId) {
+      clearInterval(battleState.intervalId);
+      battleState.intervalId = null;
+    }
+  };
+
+  const finishBattle = (reasonText = '') => {
+    if (!battleState.active || battleState.finished) return;
+    battleState.finished = true;
+    clearBattleTimer();
+
+    const participants = getActiveBattleGames();
+    const ranked = [...participants].sort(comparePlayersForBattle);
+    const winner = ranked[0];
+
+    // Check if there is a tie for 1st
+    const tiedWinners = ranked.filter((g) => comparePlayersForBattle(g, winner) === 0);
+
+    // Pause all boards by showing their win/over overlay or blocking moves
+    participants.forEach((g) => {
+      g.over = true;
+    });
+
+    game1.sound.playWinFanfare();
+
+    if (battleWinnerBanner) {
+      if (tiedWinners.length > 1) {
+        const names = tiedWinners.map((g) => `Player ${g.playerIndex}`).join(' & ');
+        battleWinnerBanner.textContent = `🤝 Draw: ${names}!`;
+      } else {
+        battleWinnerBanner.textContent = `🏆 Player ${winner.playerIndex} Wins the Battle!`;
+      }
+    }
+
+    if (battleWinnerSub) {
+      const winnerTile = Math.max(winner.getHighestTileOnBoard(), winner.bestScore);
+      if (reasonText) {
+        battleWinnerSub.textContent = reasonText;
+      } else if (battleState.type === 'race10') {
+        battleWinnerSub.textContent = `Reached the ${winner.maxUnlockedSize}×${winner.maxUnlockedSize} grid in ${formatClock(battleState.elapsedSec)}!`;
+      } else {
+        battleWinnerSub.textContent = `Highest Tile: ${winnerTile} • Score: ${winner.score.toLocaleString()} pts`;
+      }
+    }
+
+    if (battleScoreboard) {
+      battleScoreboard.innerHTML = ranked
+        .map((g, idx) => {
+          const isWinner = comparePlayersForBattle(g, winner) === 0;
+          const highestTile = Math.max(g.getHighestTileOnBoard(), g.bestScore);
+          const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+          return `<div class="battle-score-row ${isWinner ? 'winner' : ''}">
+            <div>
+              <span class="battle-score-rank">${medal}</span>
+              <span>Player ${g.playerIndex}</span>
+            </div>
+            <div class="battle-score-stats">
+              <span>Grid: <strong>${g.maxUnlockedSize}×${g.maxUnlockedSize}</strong></span>
+              <span>Best Tile: <strong>${highestTile}</strong></span>
+              <span>Score: <strong>${g.score.toLocaleString()}</strong></span>
+            </div>
+          </div>`;
+        })
+        .join('');
+    }
+
+    if (battleResultsModal) {
+      battleResultsModal.classList.remove('hidden');
+    }
+  };
+
+  const stopBattleMode = () => {
+    clearBattleTimer();
+    battleState.active = false;
+    battleState.finished = false;
+
+    if (battleHud) battleHud.classList.add('hidden');
+    if (battleResultsModal) battleResultsModal.classList.add('hidden');
+
+    window.games8192.forEach((g) => {
+      g.rootEl.classList.remove('battle-leader');
+      if (g.battleToggleBtn) {
+        g.battleToggleBtn.classList.remove('active');
+      }
+    });
+  };
+
+  const startBattleMatch = () => {
+    clearBattleTimer();
+    battleState.active = true;
+    battleState.finished = false;
+    battleState.remainingSec = battleState.durationSec;
+    battleState.elapsedSec = 0;
+
+    if (battleModal) battleModal.classList.add('hidden');
+    if (battleResultsModal) battleResultsModal.classList.add('hidden');
+
+    // Switch to the chosen number of split screens (2, 3, or 4)
+    applyScreenCount(battleState.players);
+
+    const participants = getActiveBattleGames();
+    participants.forEach((g) => {
+      if (battleState.type === 'race10') {
+        // Reset everyone to 4x4 so it's a fair race to unlock & reach 10x10!
+        g.maxUnlockedSize = 4;
+        localStorage.setItem(g.getMaxUnlockedKey(), '4');
+        for (let s = 4; s <= 10; s++) {
+          localStorage.removeItem(g.getStateKey(s));
+          localStorage.removeItem(g.getBestKey(s));
+        }
+        g.bestScore = 0;
+        g.switchGridSize(4, false);
+        g.startNewGame();
+        g.updateSizeButtonsUI();
+      } else {
+        // Highest Number Timed Battle: start a fresh game on the same starting 4x4 grid with fresh bestScore for the match
+        g.bestScore = 0;
+        g.switchGridSize(4, false);
+        g.startNewGame();
+      }
+    });
+
+    window.games8192.forEach((g) => {
+      if (g.battleToggleBtn) {
+        g.battleToggleBtn.classList.add('active');
+      }
+    });
+
+    if (battleHud) {
+      battleHud.classList.remove('hidden');
+    }
+    if (battleHudMode) {
+      battleHudMode.textContent =
+        battleState.type === 'race10'
+          ? '🏁 Race to 10×10 Grid'
+          : '⏱️ Highest Number Battle';
+    }
+    if (battleHudTimer) {
+      battleHudTimer.classList.remove('urgent');
+      battleHudTimer.textContent =
+        battleState.type === 'race10'
+          ? formatClock(0)
+          : formatClock(battleState.remainingSec);
+    }
+
+    updateBattleHud();
+
+    battleState.intervalId = setInterval(() => {
+      if (!battleState.active || battleState.finished) return;
+      if (battleState.type === 'timer') {
+        battleState.remainingSec--;
+        if (battleHudTimer) {
+          battleHudTimer.textContent = formatClock(battleState.remainingSec);
+          battleHudTimer.classList.toggle('urgent', battleState.remainingSec <= 15);
+        }
+        if (battleState.remainingSec <= 0) {
+          finishBattle("⏰ Time's Up!");
+        }
+      } else {
+        battleState.elapsedSec++;
+        if (battleHudTimer) {
+          battleHudTimer.textContent = formatClock(battleState.elapsedSec);
+        }
+      }
+    }, 1000);
+
+    game1.showToast(
+      battleState.type === 'race10'
+        ? `🏁 Battle Started! First player to unlock 10×10 wins!`
+        : `⚔️ Battle Started! Get the highest tile in ${formatClock(battleState.durationSec)}!`
+    );
+  };
+
+  window.onBattlePlayerUpdate = (updatedGame) => {
+    if (!battleState.active || battleState.finished) return;
+    if (updatedGame.playerIndex > battleState.players) return;
+
+    updateBattleHud();
+
+    // Check instant win condition in Race to 10x10 mode
+    if (
+      battleState.type === 'race10' &&
+      (updatedGame.maxUnlockedSize >= 10 || updatedGame.size >= 10)
+    ) {
+      finishBattle(
+        `🏁 Player ${updatedGame.playerIndex} unlocked the 10×10 grid first in ${formatClock(battleState.elapsedSec)}!`
+      );
+    }
+  };
+
+  window.openBattleModal = () => {
+    if (!battleModal) return;
+    // Sync default player count pill with active split screen count if >= 2
+    if (window.activeScreenCount >= 2 && !battleState.active) {
+      battleState.players = window.activeScreenCount;
+      Array.from(document.querySelectorAll('[data-battle-players]')).forEach((btn) => {
+        btn.classList.toggle(
+          'active',
+          Number(btn.getAttribute('data-battle-players')) === battleState.players
+        );
+      });
+    }
+    battleModal.classList.remove('hidden');
+  };
+
+  // Bind Battle Modal option buttons
+  Array.from(document.querySelectorAll('[data-battle-type]')).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      battleState.type = btn.getAttribute('data-battle-type') || 'timer';
+      Array.from(document.querySelectorAll('[data-battle-type]')).forEach((b) =>
+        b.classList.toggle('active', b === btn)
+      );
+      if (battleDurationGroup) {
+        battleDurationGroup.classList.toggle('hidden', battleState.type !== 'timer');
+      }
+    });
+  });
+
+  Array.from(document.querySelectorAll('[data-battle-players]')).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      battleState.players = Number(btn.getAttribute('data-battle-players')) || 2;
+      Array.from(document.querySelectorAll('[data-battle-players]')).forEach((b) =>
+        b.classList.toggle('active', b === btn)
+      );
+    });
+  });
+
+  Array.from(document.querySelectorAll('[data-battle-seconds]')).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      battleState.durationSec = Number(btn.getAttribute('data-battle-seconds')) || 120;
+      Array.from(document.querySelectorAll('[data-battle-seconds]')).forEach((b) =>
+        b.classList.toggle('active', b === btn)
+      );
+    });
+  });
+
+  if (battleCloseBtn && battleModal) {
+    battleCloseBtn.addEventListener('click', () => battleModal.classList.add('hidden'));
+    battleModal.addEventListener('click', (e) => {
+      if (e.target === battleModal) battleModal.classList.add('hidden');
+    });
+  }
+
+  if (battleStartBtn) {
+    battleStartBtn.addEventListener('click', () => startBattleMatch());
+  }
+
+  if (battleRestartBtn) {
+    battleRestartBtn.addEventListener('click', () => startBattleMatch());
+  }
+
+  if (battleStopBtn) {
+    battleStopBtn.addEventListener('click', () => {
+      stopBattleMode();
+      game1.showToast('Battle Mode Ended');
+    });
+  }
+
+  if (battleResultsCloseBtn && battleResultsModal) {
+    battleResultsCloseBtn.addEventListener('click', () =>
+      battleResultsModal.classList.add('hidden')
+    );
+  }
+
+  if (battleRematchBtn) {
+    battleRematchBtn.addEventListener('click', () => startBattleMatch());
+  }
+
+  if (battleChangeModeBtn) {
+    battleChangeModeBtn.addEventListener('click', () => {
+      if (battleResultsModal) battleResultsModal.classList.add('hidden');
+      if (battleModal) battleModal.classList.remove('hidden');
+    });
+  }
+
+  if (battleExitBtn) {
+    battleExitBtn.addEventListener('click', () => {
+      stopBattleMode();
+      game1.showToast('Exited Battle Mode');
+    });
+  }
 });

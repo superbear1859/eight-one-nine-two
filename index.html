@@ -7,6 +7,19 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Split-Screen Battle Mode HUD Banner -->
+  <section class="battle-hud hidden" id="battle-hud" aria-label="Battle Mode Status">
+    <div class="battle-hud-left">
+      <span class="battle-mode-pill" id="battle-hud-mode">⚔️ Highest Tile Battle</span>
+      <span class="battle-timer" id="battle-hud-timer">02:00</span>
+    </div>
+    <div class="battle-hud-standings" id="battle-hud-standings"></div>
+    <div class="battle-hud-actions">
+      <button type="button" class="battle-hud-btn" id="battle-restart-btn" title="Restart Battle">Restart</button>
+      <button type="button" class="battle-hud-btn battle-stop-btn" id="battle-stop-btn" title="End Battle Mode">End Battle</button>
+    </div>
+  </section>
+
   <div class="split-screen-wrapper" id="split-screen-wrapper">
     <div class="app-container" id="game-pane-1" data-player="1">
     <!-- Top Header: Title + Stats -->
@@ -99,6 +112,20 @@
             <line x1="3" y1="12" x2="21" y2="12"></line>
           </svg>
           <span data-role="split-label">1 Screen</span>
+        </button>
+
+        <button type="button" class="action-btn battle-btn" id="battle-toggle" data-role="battle-toggle" title="Open Split-Screen Battle Mode (B)" aria-label="Open Split-Screen Battle Mode">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"></polyline>
+            <line x1="13" y1="19" x2="19" y2="13"></line>
+            <line x1="16" y1="16" x2="20" y2="20"></line>
+            <line x1="19" y1="21" x2="21" y2="19"></line>
+            <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"></polyline>
+            <line x1="5" y1="14" x2="9" y2="18"></line>
+            <line x1="7" y1="17" x2="4" y2="20"></line>
+            <line x1="3" y1="19" x2="5" y2="21"></line>
+          </svg>
+          <span data-role="battle-label">Battle</span>
         </button>
 
         <button type="button" class="icon-btn" id="sound-toggle" data-role="sound-toggle" title="Toggle Sound Effects" aria-label="Toggle Sound Effects">
@@ -348,6 +375,90 @@
           <button type="submit" class="action-btn new-game-btn secret-submit-btn">Unlock</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Split-Screen Battle Mode Setup Modal -->
+  <div class="guide-modal-backdrop hidden" id="battle-modal" role="dialog" aria-modal="true" aria-labelledby="battle-modal-title">
+    <div class="guide-modal-card battle-modal-card">
+      <header class="guide-modal-header">
+        <div class="guide-header-title">
+          <svg class="icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"></polyline>
+            <line x1="13" y1="19" x2="19" y2="13"></line>
+            <line x1="16" y1="16" x2="20" y2="20"></line>
+            <line x1="19" y1="21" x2="21" y2="19"></line>
+            <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"></polyline>
+            <line x1="5" y1="14" x2="9" y2="18"></line>
+            <line x1="7" y1="17" x2="4" y2="20"></line>
+            <line x1="3" y1="19" x2="5" y2="21"></line>
+          </svg>
+          <h2 id="battle-modal-title">Split-Screen Battle Mode</h2>
+        </div>
+        <button type="button" class="guide-close-btn" id="battle-close-btn" aria-label="Close Battle Setup Modal">✕</button>
+      </header>
+
+      <div class="battle-modal-body">
+        <div class="battle-field-group">
+          <span class="battle-field-label">1. Choose Battle Mode</span>
+          <div class="battle-mode-cards" role="radiogroup" aria-label="Battle Type">
+            <button type="button" class="battle-mode-option active" data-battle-type="timer">
+              <div class="battle-option-title">⏱️ Highest Number (Timed)</div>
+              <div class="battle-option-desc">Fight to merge the highest tile before the countdown clock hits zero! (Score breaks ties)</div>
+            </button>
+            <button type="button" class="battle-mode-option" data-battle-type="race10">
+              <div class="battle-option-title">🏁 Race to 10×10 Grid</div>
+              <div class="battle-option-desc">Everyone starts on a fresh 4×4 grid! First player to unlock &amp; enter the 10×10 grid wins!</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="battle-field-group">
+          <span class="battle-field-label">2. Number of Players (Split Screens)</span>
+          <div class="battle-pill-row" id="battle-players-group">
+            <button type="button" class="battle-pill-btn active" data-battle-players="2">2 Players</button>
+            <button type="button" class="battle-pill-btn" data-battle-players="3">3 Players</button>
+            <button type="button" class="battle-pill-btn" data-battle-players="4">4 Players</button>
+          </div>
+        </div>
+
+        <div class="battle-field-group" id="battle-duration-group">
+          <span class="battle-field-label">3. Timer Duration</span>
+          <div class="battle-pill-row">
+            <button type="button" class="battle-pill-btn" data-battle-seconds="60">1 Min</button>
+            <button type="button" class="battle-pill-btn active" data-battle-seconds="120">2 Min</button>
+            <button type="button" class="battle-pill-btn" data-battle-seconds="180">3 Min</button>
+            <button type="button" class="battle-pill-btn" data-battle-seconds="300">5 Min</button>
+          </div>
+        </div>
+
+        <div class="battle-modal-footer">
+          <button type="button" class="action-btn new-game-btn battle-start-btn" id="battle-start-btn">⚔️ Start Split-Screen Battle!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Battle Results Modal -->
+  <div class="guide-modal-backdrop hidden" id="battle-results-modal" role="dialog" aria-modal="true" aria-labelledby="battle-results-title">
+    <div class="guide-modal-card battle-results-card">
+      <header class="guide-modal-header">
+        <div class="guide-header-title">
+          <span class="battle-trophy-icon">🏆</span>
+          <h2 id="battle-results-title">Battle Finished!</h2>
+        </div>
+        <button type="button" class="guide-close-btn" id="battle-results-close-btn" aria-label="Close Battle Results">✕</button>
+      </header>
+      <div class="battle-results-body">
+        <p class="battle-winner-banner" id="battle-winner-banner">Player 1 Wins!</p>
+        <p class="battle-winner-sub" id="battle-winner-sub"></p>
+        <div class="battle-scoreboard" id="battle-scoreboard"></div>
+        <div class="battle-results-actions">
+          <button type="button" class="action-btn new-game-btn" id="battle-rematch-btn">⚔️ Rematch</button>
+          <button type="button" class="action-btn guide-btn" id="battle-change-mode-btn">Change Battle Settings</button>
+          <button type="button" class="action-btn undo-btn" id="battle-exit-btn">Exit Battle Mode</button>
+        </div>
+      </div>
     </div>
   </div>
 
