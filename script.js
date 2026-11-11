@@ -30,6 +30,8 @@ const DOUBLE_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32
 const THEMES = [
   'light',
   'dark',
+  'rainbow-light',
+  'rainbow-dark',
   'neon-light',
   'neon-dark',
   'neon-rainbow-light',
@@ -38,6 +40,8 @@ const THEMES = [
 const THEME_LABELS = {
   light: 'Light',
   dark: 'Dark',
+  'rainbow-light': 'Rainbow Light',
+  'rainbow-dark': 'Rainbow Dark',
   'neon-light': 'Neon Light',
   'neon-dark': 'Neon Dark',
   'neon-rainbow-light': 'Neon Rainbow Light',
@@ -91,6 +95,42 @@ const THEME_MUSIC = {
     bass: [
       110.0, 0, 0, 110.0, 146.83, 0, 0, 146.83,
       130.81, 0, 0, 130.81, 164.81, 0, 123.47, 0,
+    ],
+  },
+  'rainbow-light': {
+    name: 'Pastel Rainbow Breeze',
+    stepMs: 225,
+    leadType: 'sine',
+    leadGain: 0.038,
+    leadDecay: 0.3,
+    bassType: 'triangle',
+    bassGain: 0.03,
+    bassDecay: 0.36,
+    lead: [
+      523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 880.0, 783.99,
+      659.25, 783.99, 880.0, 1046.5, 1174.66, 1046.5, 880.0, 783.99,
+    ],
+    bass: [
+      261.63, 0, 196.0, 0, 220.0, 0, 164.81, 0,
+      174.61, 0, 261.63, 0, 196.0, 0, 246.94, 0,
+    ],
+  },
+  'rainbow-dark': {
+    name: 'Starlight Spectrum',
+    stepMs: 260,
+    leadType: 'triangle',
+    leadGain: 0.036,
+    leadDecay: 0.42,
+    bassType: 'sine',
+    bassGain: 0.04,
+    bassDecay: 0.48,
+    lead: [
+      392.0, 493.88, 587.33, 783.99, 739.99, 587.33, 493.88, 392.0,
+      329.63, 392.0, 493.88, 659.25, 587.33, 493.88, 392.0, 0,
+    ],
+    bass: [
+      196.0, 0, 146.83, 0, 164.81, 0, 123.47, 0,
+      130.81, 0, 196.0, 0, 146.83, 0, 185.0, 0,
     ],
   },
   'neon-light': {

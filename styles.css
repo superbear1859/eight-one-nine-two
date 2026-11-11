@@ -42,6 +42,42 @@
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
+[data-theme="rainbow-light"] {
+  --bg-page: #fffaf5;
+  --text-main: #4a354f;
+  --text-light: #ffffff;
+  --text-muted: #8b5cf6;
+  --board-bg: #eadcf5;
+  --cell-empty: rgba(255, 255, 255, 0.58);
+  --score-bg: #a855f7;
+  --btn-bg: #ec4899;
+  --btn-bg-hover: #db2777;
+  --btn-secondary-bg: #f3e8ff;
+  --btn-secondary-text: #6b21a8;
+  --btn-secondary-hover: #e9d5ff;
+  --overlay-bg: rgba(255, 250, 245, 0.86);
+  --overlay-win-bg: rgba(245, 158, 11, 0.6);
+  --shadow-soft: 0 8px 24px rgba(139, 92, 246, 0.16);
+}
+
+[data-theme="rainbow-dark"] {
+  --bg-page: #14121d;
+  --text-main: #f3f4f6;
+  --text-light: #ffffff;
+  --text-muted: #c084fc;
+  --board-bg: #242034;
+  --cell-empty: rgba(76, 68, 104, 0.48);
+  --score-bg: #312b47;
+  --btn-bg: #8b5cf6;
+  --btn-bg-hover: #7c3aed;
+  --btn-secondary-bg: #2e2942;
+  --btn-secondary-text: #e9d5ff;
+  --btn-secondary-hover: #3d3656;
+  --overlay-bg: rgba(20, 18, 29, 0.86);
+  --overlay-win-bg: rgba(139, 92, 246, 0.62);
+  --shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.42);
+}
+
 [data-theme="neon-light"] {
   --bg-page: #f5f3ff;
   --text-main: #3b0764;
@@ -645,6 +681,7 @@ body {
 }
 
 [data-theme="dark"] .reset-unlocks-btn,
+[data-theme="rainbow-dark"] .reset-unlocks-btn,
 [data-theme="neon-dark"] .reset-unlocks-btn,
 [data-theme="neon-rainbow-dark"] .reset-unlocks-btn {
   color: #f87171;
@@ -1361,6 +1398,140 @@ body {
 }
 
 /* ==========================================================================
+   Rainbow Light & Rainbow Dark Theme Overrides (Classic Non-Neon Rainbow)
+   ========================================================================== */
+[data-theme="rainbow-light"] body {
+  background-image: linear-gradient(135deg, #ffd6e0 0%, #ffe8c2 22%, #fff8c2 44%, #d1f7de 66%, #d2ecff 84%, #ead6ff 100%);
+  background-attachment: fixed;
+}
+
+[data-theme="rainbow-dark"] body {
+  background-image: linear-gradient(135deg, #2b121c 0%, #2b1d12 22%, #262612 44%, #11261c 66%, #111e2b 84%, #21122b 100%);
+  background-attachment: fixed;
+}
+
+[data-theme="rainbow-light"] .game-title,
+[data-theme="rainbow-dark"] .game-title {
+  background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="rainbow-light"] .board-container {
+  background: linear-gradient(135deg, #f9d5e5 0%, #fce8cc 33%, #d6f5e3 66%, #e2d9f7 100%);
+  border: 2px solid rgba(168, 85, 247, 0.35);
+}
+
+[data-theme="rainbow-dark"] .board-container {
+  background: linear-gradient(135deg, #321b29 0%, #2d231a 33%, #192d25 66%, #241b35 100%);
+  border: 2px solid rgba(192, 132, 252, 0.3);
+}
+
+[data-theme="rainbow-light"] .score-box {
+  background: linear-gradient(135deg, #f43f5e, #f59e0b, #8b5cf6);
+}
+
+[data-theme="rainbow-dark"] .score-box {
+  background: linear-gradient(135deg, #4c1d95, #1e3a8a, #065f46);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* Rainbow Light Tiles (Warm Classic Spectrum, no neon glow) */
+[data-theme="rainbow-light"] .tile-1 .tile-inner {
+  background: #fff1f2;
+  color: #9f1239;
+  border: 1.5px dashed #f43f5e;
+}
+[data-theme="rainbow-light"] .tile-2 .tile-inner {
+  background: #fecdd3;
+  color: #881337;
+}
+[data-theme="rainbow-light"] .tile-4 .tile-inner {
+  background: #fed7aa;
+  color: #7c2d12;
+}
+[data-theme="rainbow-light"] .tile-8 .tile-inner {
+  background: #fef08a;
+  color: #713f12;
+}
+[data-theme="rainbow-light"] .tile-16 .tile-inner {
+  background: #bbf7d0;
+  color: #14532d;
+}
+[data-theme="rainbow-light"] .tile-32 .tile-inner {
+  background: #99f6e4;
+  color: #134e4a;
+}
+[data-theme="rainbow-light"] .tile-64 .tile-inner {
+  background: #bae6fd;
+  color: #0c4a6e;
+}
+[data-theme="rainbow-light"] .tile-128 .tile-inner {
+  background: #c7d2fe;
+  color: #312e81;
+}
+[data-theme="rainbow-light"] .tile-256 .tile-inner {
+  background: #e9d5ff;
+  color: #581c87;
+}
+[data-theme="rainbow-light"] .tile-512 .tile-inner {
+  background: #fbcfe8;
+  color: #831843;
+}
+[data-theme="rainbow-light"] .tile-1024 .tile-inner {
+  background: linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6);
+  color: #ffffff;
+}
+
+/* Rainbow Dark Tiles (Rich Deep Spectrum, no neon glow) */
+[data-theme="rainbow-dark"] .tile-1 .tile-inner {
+  background: #3b1926;
+  color: #fda4af;
+  border: 1.5px dashed #fb7185;
+}
+[data-theme="rainbow-dark"] .tile-2 .tile-inner {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+[data-theme="rainbow-dark"] .tile-4 .tile-inner {
+  background: #7c2d12;
+  color: #fed7aa;
+}
+[data-theme="rainbow-dark"] .tile-8 .tile-inner {
+  background: #713f12;
+  color: #fef08a;
+}
+[data-theme="rainbow-dark"] .tile-16 .tile-inner {
+  background: #14532d;
+  color: #bbf7d0;
+}
+[data-theme="rainbow-dark"] .tile-32 .tile-inner {
+  background: #134e4a;
+  color: #99f6e4;
+}
+[data-theme="rainbow-dark"] .tile-64 .tile-inner {
+  background: #1e3a8a;
+  color: #bfdbfe;
+}
+[data-theme="rainbow-dark"] .tile-128 .tile-inner {
+  background: #312e81;
+  color: #c7d2fe;
+}
+[data-theme="rainbow-dark"] .tile-256 .tile-inner {
+  background: #581c87;
+  color: #e9d5ff;
+}
+[data-theme="rainbow-dark"] .tile-512 .tile-inner {
+  background: #831843;
+  color: #fbcfe8;
+}
+[data-theme="rainbow-dark"] .tile-1024 .tile-inner {
+  background: linear-gradient(135deg, #b91c1c, #d97706, #047857, #1d4ed8, #6d28d9);
+  color: #ffffff;
+}
+
+/* ==========================================================================
    Neon Rainbow Light & Neon Rainbow Dark Theme Overrides
    ========================================================================== */
 @keyframes rainbow-hue-flow {
@@ -1373,13 +1544,13 @@ body {
 }
 
 [data-theme="neon-rainbow-light"] body {
-  background-image: linear-gradient(135deg, #ffe4e6 0%, #fef3c7 25%, #dcfce7 50%, #e0f2fe 75%, #f3e8ff 100%);
+  background-image: linear-gradient(135deg, #ffc2d4 0%, #ffe5b4 22%, #fff6b3 44%, #b8f7d4 66%, #bce8ff 84%, #e5c6ff 100%);
+  background-attachment: fixed;
 }
 
 [data-theme="neon-rainbow-dark"] body {
-  background-image: radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.16), transparent 45%),
-    radial-gradient(circle at 80% 30%, rgba(6, 182, 212, 0.16), transparent 45%),
-    radial-gradient(circle at 50% 80%, rgba(168, 85, 247, 0.18), transparent 50%);
+  background-image: linear-gradient(135deg, #240618 0%, #241306 25%, #062118 50%, #061829 75%, #1d0629 100%);
+  background-attachment: fixed;
 }
 
 [data-theme="neon-rainbow-light"] .game-title,
