@@ -27,12 +27,21 @@ const SMASH_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 327
 const SWAP_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 const DOUBLE_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 
-const THEMES = ['light', 'dark', 'neon-light', 'neon-dark'];
+const THEMES = [
+  'light',
+  'dark',
+  'neon-light',
+  'neon-dark',
+  'neon-rainbow-light',
+  'neon-rainbow-dark',
+];
 const THEME_LABELS = {
   light: 'Light',
   dark: 'Dark',
   'neon-light': 'Neon Light',
   'neon-dark': 'Neon Dark',
+  'neon-rainbow-light': 'Neon Rainbow Light',
+  'neon-rainbow-dark': 'Neon Rainbow Dark',
 };
 
 const STORAGE_KEYS = {
@@ -118,6 +127,67 @@ const THEME_MUSIC = {
     bass: [
       146.83, 146.83, 293.66, 146.83, 116.54, 116.54, 233.08, 116.54,
       130.81, 130.81, 261.63, 130.81, 110.0, 110.0, 220.0, 138.59,
+    ],
+  },
+  'neon-rainbow-light': {
+    name: 'Rainbow Prism Chiptune',
+    stepMs: 145,
+    leadType: 'square',
+    leadGain: 0.022,
+    leadDecay: 0.18,
+    bassType: 'triangle',
+    bassGain: 0.03,
+    bassDecay: 0.2,
+    lead: [
+      523.25, 659.25, 783.99, 1046.5, 1174.66, 1046.5, 783.99, 659.25,
+      587.33, 739.99, 880.0, 1174.66, 1318.51, 1174.66, 880.0, 739.99,
+      659.25, 783.99, 987.77, 1318.51, 1567.98, 1318.51, 987.77, 783.99,
+      1046.5, 987.77, 880.0, 783.99, 659.25, 783.99, 1046.5, 0,
+    ],
+    bass: [
+      261.63, 0, 196.0, 0, 261.63, 0, 196.0, 0,
+      293.66, 0, 220.0, 0, 293.66, 0, 220.0, 0,
+      329.63, 0, 246.94, 0, 329.63, 0, 246.94, 0,
+      261.63, 0, 196.0, 0, 261.63, 196.0, 261.63, 0,
+    ],
+  },
+  // Beverly Hills Cop Theme ("Axel F" by Harold Faltermeyer, 1984 — 16-step 16th-note grid in F minor)
+  'neon-rainbow-dark': {
+    name: 'Beverly Hills Cop (Axel F)',
+    stepMs: 127,
+    leadType: 'sawtooth',
+    leadGain: 0.032,
+    leadDecay: 0.22,
+    bassType: 'sawtooth',
+    bassGain: 0.028,
+    bassDecay: 0.19,
+    lead: [
+      // Bar 1: F5 (2/16), rest (1/16), Ab5 (3/16), F5 (2/16), F5 (1/16), Bb5 (2/16), F5 (2/16), Eb5 (2/16), rest (1/16)
+      698.46, 0, 0, 830.61, 0, 0, 698.46, 0,
+      698.46, 932.33, 0, 698.46, 0, 622.25, 0, 0,
+      // Bar 2: F5 (2/16), rest (1/16), C6 (3/16), F5 (2/16), F5 (1/16), Db6 (2/16), C6 (2/16), Ab5 (2/16), rest (1/16)
+      698.46, 0, 0, 1046.5, 0, 0, 698.46, 0,
+      698.46, 1108.73, 0, 1046.5, 0, 830.61, 0, 0,
+      // Bar 3: F5 (2/16), C6 (2/16), F6 (2/16), F5 (1/16), Eb5 (2/16), Eb5 (1/16), C5 (2/16), G5 (2/16), F5 (2/16)
+      698.46, 0, 1046.5, 0, 1396.91, 0, 698.46, 622.25,
+      0, 622.25, 523.25, 0, 783.99, 0, 698.46, 0,
+      // Bar 4: sustain / synth turnaround
+      0, 0, 0, 0, 0, 0, 0, 0,
+      523.25, 0, 622.25, 0, 698.46, 0, 0, 0,
+    ],
+    bass: [
+      // Bar 1 (F minor octave synth bass)
+      174.61, 0, 174.61, 349.23, 0, 174.61, 155.56, 0,
+      174.61, 0, 349.23, 0, 155.56, 0, 174.61, 0,
+      // Bar 2 (Eb / Db bass movement)
+      155.56, 0, 155.56, 311.13, 0, 155.56, 138.59, 0,
+      138.59, 0, 277.18, 0, 155.56, 0, 174.61, 0,
+      // Bar 3 (Db -> Eb -> C -> F)
+      138.59, 0, 277.18, 0, 155.56, 0, 311.13, 0,
+      130.81, 0, 261.63, 0, 174.61, 0, 349.23, 0,
+      // Bar 4 turnaround
+      174.61, 0, 349.23, 174.61, 155.56, 0, 130.81, 0,
+      138.59, 0, 155.56, 0, 174.61, 0, 349.23, 0,
     ],
   },
 };
@@ -262,10 +332,13 @@ class SoundEngine {
       gain.gain.linearRampToValueAtTime(track.leadGain, now + 0.018);
       gain.gain.exponentialRampToValueAtTime(0.0008, now + track.leadDecay);
 
-      if (this.currentTheme === 'neon-dark') {
+      if (this.currentTheme === 'neon-dark' || this.currentTheme === 'neon-rainbow-dark') {
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(1650, now);
+        filter.frequency.setValueAtTime(
+          this.currentTheme === 'neon-rainbow-dark' ? 2400 : 1650,
+          now
+        );
         osc.connect(filter);
         filter.connect(gain);
       } else {
@@ -287,7 +360,12 @@ class SoundEngine {
       gain.gain.linearRampToValueAtTime(track.bassGain, now + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0008, now + track.bassDecay);
 
-      if (this.currentTheme === 'neon-dark' || this.currentTheme === 'neon-light') {
+      if (
+        this.currentTheme === 'neon-dark' ||
+        this.currentTheme === 'neon-light' ||
+        this.currentTheme === 'neon-rainbow-dark' ||
+        this.currentTheme === 'neon-rainbow-light'
+      ) {
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(520, now);
