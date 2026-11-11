@@ -115,22 +115,43 @@ const THEME_MUSIC = {
       174.61, 0, 261.63, 0, 196.0, 0, 246.94, 0,
     ],
   },
+  // "Soon May the Wellerman Come" (Sea Shanty chorus in C minor, 16-step 16th-note grid)
   'rainbow-dark': {
-    name: 'Starlight Spectrum',
-    stepMs: 260,
+    name: 'The Wellerman',
+    stepMs: 138,
     leadType: 'triangle',
-    leadGain: 0.036,
-    leadDecay: 0.42,
-    bassType: 'sine',
-    bassGain: 0.04,
-    bassDecay: 0.48,
+    leadGain: 0.042,
+    leadDecay: 0.25,
+    bassType: 'sawtooth',
+    bassGain: 0.024,
+    bassDecay: 0.22,
     lead: [
-      392.0, 493.88, 587.33, 783.99, 739.99, 587.33, 493.88, 392.0,
-      329.63, 392.0, 493.88, 659.25, 587.33, 493.88, 392.0, 0,
+      // Bar 1 (Ab -> Eb): "Soon may the Wel-ler-man come" (C5, G4-G4, Ab4-F4, G4-Bb4)
+      523.25, 0, 0, 0, 392.0, 0, 392.0, 0,
+      415.3, 0, 349.23, 0, 392.0, 0, 466.16, 0,
+      // Bar 2 (Cm): "To bring us su-gar and tea and rum" (Eb4, G4, C4, C5, C5, B4-C5, D5)
+      311.13, 392.0, 261.63, 523.25, 0, 0, 523.25, 0,
+      493.88, 523.25, 587.33, 0, 0, 0, 0, 0,
+      // Bar 3 (Ab -> Eb): "One day, when the tongu-ing is done" (C5, G4-G4, Ab4-F4, G4-Bb4)
+      523.25, 0, 0, 0, 392.0, 0, 392.0, 0,
+      415.3, 0, 349.23, 0, 392.0, 0, 466.16, 0,
+      // Bar 4 (G -> Cm): "We'll take our leave and go!" (G4, G4, F4, Eb4, D4, C4)
+      392.0, 0, 392.0, 349.23, 0, 0, 311.13, 293.66,
+      261.63, 0, 0, 0, 0, 0, 392.0, 0,
     ],
     bass: [
-      196.0, 0, 146.83, 0, 164.81, 0, 123.47, 0,
-      130.81, 0, 196.0, 0, 146.83, 0, 185.0, 0,
+      // Bar 1: Ab2 -> Eb2 sea shanty stomp
+      103.83, 0, 207.65, 0, 103.83, 0, 207.65, 0,
+      155.56, 0, 311.13, 0, 155.56, 0, 311.13, 0,
+      // Bar 2: C3 -> G2
+      130.81, 0, 261.63, 0, 130.81, 0, 261.63, 0,
+      98.0, 0, 196.0, 0, 98.0, 0, 196.0, 0,
+      // Bar 3: Ab2 -> Eb2
+      103.83, 0, 207.65, 0, 103.83, 0, 207.65, 0,
+      155.56, 0, 311.13, 0, 155.56, 0, 311.13, 0,
+      // Bar 4: G2 -> C3
+      98.0, 0, 196.0, 0, 98.0, 0, 196.0, 0,
+      130.81, 0, 261.63, 0, 130.81, 0, 196.0, 0,
     ],
   },
   'neon-light': {
@@ -404,7 +425,8 @@ class SoundEngine {
         this.currentTheme === 'neon-dark' ||
         this.currentTheme === 'neon-light' ||
         this.currentTheme === 'neon-rainbow-dark' ||
-        this.currentTheme === 'neon-rainbow-light'
+        this.currentTheme === 'neon-rainbow-light' ||
+        this.currentTheme === 'rainbow-dark'
       ) {
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
