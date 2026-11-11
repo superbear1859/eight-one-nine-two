@@ -210,27 +210,149 @@ body {
 
 .split-screen-wrapper[data-screen-count="3"] {
   max-width: 1460px;
-  gap: 18px;
+  gap: 14px;
 }
 
 .split-screen-wrapper[data-screen-count="3"] .app-container {
-  --board-size: min(30vw, 390px);
+  --board-size: min(30vw, 350px);
   max-width: var(--board-size);
   flex: 1 1 0;
+  gap: 8px;
+}
+
+.split-screen-wrapper[data-screen-count="3"] .game-footer {
+  display: none;
 }
 
 .split-screen-wrapper[data-screen-count="4"] {
-  max-width: 980px;
+  max-width: 820px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   justify-items: center;
-  gap: 22px;
+  align-items: start;
+  gap: 10px 14px;
 }
 
 .split-screen-wrapper[data-screen-count="4"] .app-container {
-  --board-size: min(44vw, 420px);
-  max-width: var(--board-size);
+  --board-size: clamp(148px, min(43vw, 27vh), 255px);
+  max-width: min(46vw, 370px);
+  gap: 5px;
+  background: rgba(119, 110, 101, 0.05);
+  padding: 7px 9px;
+  border-radius: 12px;
 }
+
+/* Compact header, buttons, and grid gaps in 4-Player mode so all 4 screens fit in one viewport */
+.split-screen-wrapper[data-screen-count="4"] .game-subtitle,
+.split-screen-wrapper[data-screen-count="4"] .game-footer {
+  display: none;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .game-header {
+  align-items: center;
+  gap: 6px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .game-title {
+  font-size: 1.45rem;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .player-badge {
+  font-size: 0.62rem;
+  padding: 2px 6px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .scores-container {
+  gap: 5px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .score-box {
+  padding: 3px 8px;
+  min-width: 52px;
+  border-radius: 6px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .score-label {
+  font-size: 0.55rem;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .score-value {
+  font-size: 0.88rem;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .controls-bar {
+  gap: 4px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .size-selector {
+  padding: 2px;
+  gap: 2px;
+  border-radius: 6px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .size-btn {
+  font-size: 0.62rem;
+  padding: 3px 4px;
+  border-radius: 4px;
+  gap: 2px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .size-btn .lock-icon {
+  width: 9px;
+  height: 9px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .reset-unlocks-btn {
+  font-size: 0.6rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .action-buttons {
+  gap: 3px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .undo-btn,
+.split-screen-wrapper[data-screen-count="4"] .smash-btn,
+.split-screen-wrapper[data-screen-count="4"] .swap-btn,
+.split-screen-wrapper[data-screen-count="4"] .double-btn,
+.split-screen-wrapper[data-screen-count="4"] .split-btn,
+.split-screen-wrapper[data-screen-count="4"] .battle-btn,
+.split-screen-wrapper[data-screen-count="4"] .music-btn,
+.split-screen-wrapper[data-screen-count="4"] .theme-btn,
+.split-screen-wrapper[data-screen-count="4"] .guide-btn,
+.split-screen-wrapper[data-screen-count="4"] .new-game-btn {
+  padding: 3px 6px;
+  font-size: 0.64rem;
+  border-radius: 5px;
+  gap: 3px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .action-btn .icon,
+.split-screen-wrapper[data-screen-count="4"] .icon-btn .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .icon-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .undo-badge {
+  font-size: 0.58rem;
+  padding: 0 4px;
+  min-width: 14px;
+}
+
+.split-screen-wrapper[data-screen-count="4"] .board-container[data-grid-size="4"] { --grid-gap: 6px; --tile-radius: 5px; }
+.split-screen-wrapper[data-screen-count="4"] .board-container[data-grid-size="5"] { --grid-gap: 5px; --tile-radius: 5px; }
+.split-screen-wrapper[data-screen-count="4"] .board-container[data-grid-size="6"] { --grid-gap: 4px; --tile-radius: 4px; }
+.split-screen-wrapper[data-screen-count="4"] .board-container[data-grid-size="7"] { --grid-gap: 3.5px; --tile-radius: 3.5px; }
+.split-screen-wrapper[data-screen-count="4"] .board-container[data-grid-size="8"] { --grid-gap: 3px; --tile-radius: 3px; }
+.split-screen-wrapper[data-screen-count="4"] .board-container[data-grid-size="9"] { --grid-gap: 2.5px; --tile-radius: 2.5px; }
+.split-screen-wrapper[data-screen-count="4"] .board-container[data-grid-size="10"] { --grid-gap: 2px; --tile-radius: 2px; }
 
 @media (max-width: 1120px) {
   .split-screen-wrapper[data-screen-count="3"] {
@@ -238,7 +360,7 @@ body {
   }
 
   .split-screen-wrapper[data-screen-count="3"] .app-container {
-    --board-size: min(44vw, 420px);
+    --board-size: min(44vw, 350px);
     max-width: var(--board-size);
     flex: 1 1 42%;
   }
@@ -246,25 +368,28 @@ body {
 
 @media (max-width: 820px) {
   .split-screen-wrapper[data-screen-count="2"],
-  .split-screen-wrapper[data-screen-count="3"],
-  .split-screen-wrapper[data-screen-count="4"] {
+  .split-screen-wrapper[data-screen-count="3"] {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 28px;
+    gap: 24px;
   }
 
   .split-screen-wrapper[data-screen-count="2"] .app-container,
-  .split-screen-wrapper[data-screen-count="3"] .app-container,
-  .split-screen-wrapper[data-screen-count="4"] .app-container {
-    --board-size: min(92vw, 440px);
+  .split-screen-wrapper[data-screen-count="3"] .app-container {
+    --board-size: min(92vw, 420px);
     max-width: 470px;
     flex: 1 1 auto;
   }
 
-  .split-screen-wrapper.split-active .app-container + .app-container {
-    border-top: 2px dashed rgba(119, 110, 101, 0.35);
-    padding-top: 20px;
+  /* Keep 4-Screen Mode in a 2x2 quad grid even on tablets and mobile so all 4 fit at once */
+  .split-screen-wrapper[data-screen-count="4"] {
+    gap: 8px;
+  }
+
+  .split-screen-wrapper[data-screen-count="4"] .app-container {
+    --board-size: clamp(130px, min(43vw, 25vh), 220px);
+    padding: 5px 6px;
   }
 }
 
@@ -927,47 +1052,22 @@ body {
    Tile Typography Sizing per Grid Size & Digit Count
    ========================================================================== */
 
-/* 4x4 font sizes */
-.board-container[data-grid-size="4"] .tile-inner { font-size: clamp(1.6rem, 7vw, 2.3rem); }
-.board-container[data-grid-size="4"] .tile-digits-3 .tile-inner { font-size: clamp(1.35rem, 6vw, 1.95rem); }
-.board-container[data-grid-size="4"] .tile-digits-4 .tile-inner { font-size: clamp(1.15rem, 5vw, 1.6rem); }
-.board-container[data-grid-size="4"] .tile-digits-5 .tile-inner { font-size: clamp(0.95rem, 4.2vw, 1.3rem); }
+/* Tile Typography Sizing per Grid Size & Digit Count (scales directly with --cell-size) */
+.tile-inner {
+  font-size: calc(var(--cell-size) * 0.42);
+}
 
-/* 5x5 font sizes */
-.board-container[data-grid-size="5"] .tile-inner { font-size: clamp(1.3rem, 5.6vw, 1.85rem); }
-.board-container[data-grid-size="5"] .tile-digits-3 .tile-inner { font-size: clamp(1.1rem, 4.8vw, 1.55rem); }
-.board-container[data-grid-size="5"] .tile-digits-4 .tile-inner { font-size: clamp(0.95rem, 4vw, 1.3rem); }
-.board-container[data-grid-size="5"] .tile-digits-5 .tile-inner { font-size: clamp(0.8rem, 3.4vw, 1.1rem); }
+.tile-digits-3 .tile-inner {
+  font-size: calc(var(--cell-size) * 0.34);
+}
 
-/* 6x6 font sizes */
-.board-container[data-grid-size="6"] .tile-inner { font-size: clamp(1.05rem, 4.6vw, 1.5rem); }
-.board-container[data-grid-size="6"] .tile-digits-3 .tile-inner { font-size: clamp(0.92rem, 4vw, 1.25rem); }
-.board-container[data-grid-size="6"] .tile-digits-4 .tile-inner { font-size: clamp(0.78rem, 3.3vw, 1.05rem); }
-.board-container[data-grid-size="6"] .tile-digits-5 .tile-inner { font-size: clamp(0.68rem, 2.8vw, 0.9rem); }
+.tile-digits-4 .tile-inner {
+  font-size: calc(var(--cell-size) * 0.28);
+}
 
-/* 7x7 font sizes */
-.board-container[data-grid-size="7"] .tile-inner { font-size: clamp(0.9rem, 3.8vw, 1.25rem); }
-.board-container[data-grid-size="7"] .tile-digits-3 .tile-inner { font-size: clamp(0.78rem, 3.3vw, 1.05rem); }
-.board-container[data-grid-size="7"] .tile-digits-4 .tile-inner { font-size: clamp(0.66rem, 2.8vw, 0.88rem); }
-.board-container[data-grid-size="7"] .tile-digits-5 .tile-inner { font-size: clamp(0.56rem, 2.4vw, 0.74rem); }
-
-/* 8x8 font sizes */
-.board-container[data-grid-size="8"] .tile-inner { font-size: clamp(0.8rem, 3.3vw, 1.1rem); }
-.board-container[data-grid-size="8"] .tile-digits-3 .tile-inner { font-size: clamp(0.68rem, 2.9vw, 0.92rem); }
-.board-container[data-grid-size="8"] .tile-digits-4 .tile-inner { font-size: clamp(0.58rem, 2.4vw, 0.76rem); }
-.board-container[data-grid-size="8"] .tile-digits-5 .tile-inner { font-size: clamp(0.5rem, 2vw, 0.65rem); }
-
-/* 9x9 font sizes */
-.board-container[data-grid-size="9"] .tile-inner { font-size: clamp(0.72rem, 2.9vw, 0.96rem); }
-.board-container[data-grid-size="9"] .tile-digits-3 .tile-inner { font-size: clamp(0.62rem, 2.5vw, 0.82rem); }
-.board-container[data-grid-size="9"] .tile-digits-4 .tile-inner { font-size: clamp(0.52rem, 2.1vw, 0.68rem); }
-.board-container[data-grid-size="9"] .tile-digits-5 .tile-inner { font-size: clamp(0.45rem, 1.8vw, 0.58rem); }
-
-/* 10x10 font sizes */
-.board-container[data-grid-size="10"] .tile-inner { font-size: clamp(0.65rem, 2.6vw, 0.86rem); }
-.board-container[data-grid-size="10"] .tile-digits-3 .tile-inner { font-size: clamp(0.56rem, 2.2vw, 0.74rem); }
-.board-container[data-grid-size="10"] .tile-digits-4 .tile-inner { font-size: clamp(0.48rem, 1.9vw, 0.62rem); }
-.board-container[data-grid-size="10"] .tile-digits-5 .tile-inner { font-size: clamp(0.41rem, 1.6vw, 0.52rem); }
+.tile-digits-5 .tile-inner {
+  font-size: calc(var(--cell-size) * 0.23);
+}
 
 /* ==========================================================================
    Tile Palette: Warm Classic (2 - 1024) + Vibrant High-Tier Glow (2048 - 8192+)
