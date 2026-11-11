@@ -115,98 +115,99 @@ const THEME_MUSIC = {
       174.61, 0, 261.63, 0, 196.0, 0, 246.94, 0,
     ],
   },
-  // "The Wellermen" (4-part vocal group harmony arrangement in C minor, 16-step 16th-note grid)
-  // Includes baritone pickup ("There once was a..."), rich 3-voice choir harmony, and deep bass singer (C2/Ab1/G1)
+  // "Wellerman" (Sea Shanty — Chorus first, then Verse in C minor; -1 in lead array sustains the previous note!)
   'rainbow-dark': {
-    name: 'The Wellermen',
-    stepMs: 140,
+    name: 'Wellerman (Sea Shanty)',
+    stepMs: 138,
     leadType: 'sawtooth',
-    leadGain: 0.026,
-    leadDecay: 0.27,
+    leadGain: 0.036,
+    leadDecay: 0.24,
     harmonyType: 'triangle',
-    harmonyGain: 0.024,
-    harmonyDecay: 0.28,
-    bassType: 'sawtooth',
-    bassGain: 0.036,
-    bassDecay: 0.3,
+    harmonyGain: 0.02,
+    harmonyDecay: 0.24,
+    bassType: 'triangle',
+    bassGain: 0.044,
+    bassDecay: 0.25,
     lead: [
-      // Bar 1 (Cm): "(There) once was a ship that put to sea, the" — G4(4), C4(2), C4(2), Eb4(4), G4(2), C4(1), D4(1)
-      392.0, 0, 0, 0, 261.63, 0, 261.63, 0,
-      311.13, 0, 0, 0, 392.0, 0, 261.63, 293.66,
-      // Bar 2 (Fm -> Cm): "name of the ship was the Bil-ly o' Tea, the" — Eb4(2), Eb4(2), C4(2), F4(2), F4(2), Ab4(2), C5(2), G4(1), G4(1)
-      311.13, 0, 311.13, 0, 261.63, 0, 349.23, 0,
-      349.23, 0, 415.3, 0, 523.25, 0, 392.0, 392.0,
-      // Bar 3 (Cm): "winds blew up, her bow dipped down, oh" — G4(4), C4(2), C4(2), Eb4(4), G4(2), G4(2)
-      392.0, 0, 0, 0, 261.63, 0, 261.63, 0,
-      311.13, 0, 0, 0, 392.0, 0, 392.0, 0,
-      // Bar 4 (G -> Cm): "blow, my bul-ly boys, blow (HUH!)" — G4(4), F4(2), Eb4(2), D4(4), C4(4)
-      392.0, 0, 0, 0, 349.23, 0, 311.13, 0,
-      293.66, 0, 0, 0, 261.63, 0, 0, 0,
-      // Bar 5 (Ab -> Eb): "Soon may the Wel-ler-man come, to" — C5(6), C5(2), G4(2), Eb4(2), G4(2), Eb4(1), F4(1)
-      523.25, 0, 0, 0, 0, 0, 523.25, 0,
-      392.0, 0, 311.13, 0, 392.0, 0, 311.13, 349.23,
-      // Bar 6 (Fm -> Cm): "bring us su-gar and tea and rum" — G4(2), G4(2), C4(2), F4(2), F4(2), Ab4(2), C5(2), G4(2)
-      392.0, 0, 392.0, 0, 261.63, 0, 349.23, 0,
-      349.23, 0, 415.3, 0, 523.25, 0, 392.0, 0,
-      // Bar 7 (Ab -> Eb): "One day, when the tongu-ing is done, we'll" — C5(6), C5(2), G4(2), G4(2), Eb4(2), G4(2)
-      523.25, 0, 0, 0, 0, 0, 523.25, 0,
-      392.0, 0, 392.0, 0, 311.13, 0, 392.0, 0,
-      // Bar 8 (G -> Cm): "take our leave and go!" — G4(4), F4(2), Eb4(2), D4(4), C4(4)
-      392.0, 0, 0, 0, 349.23, 0, 311.13, 0,
-      293.66, 0, 0, 0, 261.63, 0, 196.0, 261.63,
+      // CHORUS Line 1: "Soon may the Wel-ler-man come, to"
+      // Soon (C5 6 steps), may the (Ab4 2 steps), Wel- (Bb4 2), -ler- (Bb4 2), -man (G4 2), come (G4 1), to (G4 1)
+      523.25, -1, -1, -1, -1, -1, 415.3, -1,
+      466.16, -1, 466.16, -1, 392.0, 0, 392.0, 392.0,
+      // CHORUS Line 2: "bring us su-gar and tea and rum"
+      // bring (Ab4 2), us (F4 2), su- (F4 2), -gar (F4 1), and (Ab4 1), tea (C5 2), and (G4 2), rum (G4 4)
+      415.3, -1, 349.23, 0, 349.23, 0, 349.23, 415.3,
+      523.25, -1, 392.0, 0, 392.0, -1, -1, 0,
+      // CHORUS Line 3: "One day, when the tongu-ing is done, we'll"
+      // One (C5 6 steps), day (Ab4 1), when the (Ab4 1), tongu- (Bb4 2), -ing (Bb4 2), is (G4 2), done (G4 1), we'll (G4 1)
+      523.25, -1, -1, -1, -1, -1, 415.3, 415.3,
+      466.16, -1, 466.16, -1, 392.0, 0, 392.0, 392.0,
+      // CHORUS Line 4: "take our leave and go!"
+      // take (G4 4), our (F4 2), leave (Eb4 2), and (D4 4), go! (C4 4)
+      392.0, -1, -1, 0, 349.23, -1, 311.13, -1,
+      293.66, -1, -1, 0, 261.63, -1, -1, 196.0,
+
+      // VERSE Line 1: "(There) once was a ship that put to sea, the"
+      // once (C4 4), was (C4 2), a (C4 2), ship (Eb4 2), that (G4 2), put (G4 2), to (G4 1), sea/the (G4 1)
+      261.63, -1, -1, 0, 261.63, 0, 261.63, 0,
+      311.13, -1, 392.0, 0, 392.0, 0, 392.0, 392.0,
+      // VERSE Line 2: "name of the ship was the Bil-ly o' Tea, the"
+      // name (Ab4 2), of (F4 2), the (F4 2), ship (F4 1), was the (Ab4 1), Bil- (C5 2), -ly o' (G4 2), Tea (G4 3), the (G4 1)
+      415.3, -1, 349.23, 0, 349.23, 0, 349.23, 415.3,
+      523.25, -1, 392.0, 0, 392.0, -1, 0, 196.0,
+      // VERSE Line 3: "winds blew up, her bow dipped down, oh"
+      // winds (C4 4), blew (C4 2), up (C4 2), her (Eb4 2), bow (G4 2), dipped (G4 2), down (G4 1), oh (G4 1)
+      261.63, -1, -1, 0, 261.63, 0, 261.63, 0,
+      311.13, -1, 392.0, 0, 392.0, 0, 392.0, 392.0,
+      // VERSE Line 4: "blow, my bul-ly boys, blow (HUH!)"
+      // blow (G4 4), my (F4 2), bul-ly (Eb4 2), boys (D4 4), blow (C4 4)
+      392.0, -1, -1, 0, 349.23, -1, 311.13, -1,
+      293.66, -1, -1, 0, 261.63, -1, -1, 0,
     ],
     harmony: [
-      // Bar 1 (Tenor/Baritone harmony)
-      311.13, 0, 0, 0, 196.0, 0, 196.0, 0,
-      261.63, 0, 0, 0, 311.13, 0, 196.0, 220.0,
-      // Bar 2
-      261.63, 0, 261.63, 0, 196.0, 0, 261.63, 0,
-      261.63, 0, 349.23, 0, 415.3, 0, 311.13, 311.13,
-      // Bar 3
-      311.13, 0, 0, 0, 196.0, 0, 196.0, 0,
-      261.63, 0, 0, 0, 311.13, 0, 311.13, 0,
-      // Bar 4
-      293.66, 0, 0, 0, 261.63, 0, 246.94, 0,
-      246.94, 0, 0, 0, 196.0, 0, 392.0, 0,
-      // Bar 5 (Full Wellermen chorus harmony in thirds/sixths)
-      415.3, 0, 0, 0, 0, 0, 415.3, 0,
-      311.13, 0, 233.08, 0, 311.13, 0, 233.08, 261.63,
-      // Bar 6
-      311.13, 0, 311.13, 0, 196.0, 0, 261.63, 0,
-      261.63, 0, 349.23, 0, 415.3, 0, 311.13, 0,
-      // Bar 7
-      415.3, 0, 0, 0, 0, 0, 415.3, 0,
-      311.13, 0, 311.13, 0, 233.08, 0, 311.13, 0,
-      // Bar 8
-      293.66, 0, 0, 0, 261.63, 0, 246.94, 0,
-      246.94, 0, 0, 0, 196.0, 0, 146.83, 196.0,
+      // Chorus harmony (singing thirds/sixths underneath the lead)
+      311.13, -1, -1, -1, -1, -1, 261.63, -1,
+      311.13, -1, 311.13, -1, 233.08, 0, 233.08, 233.08,
+      261.63, -1, 207.65, 0, 207.65, 0, 207.65, 261.63,
+      311.13, -1, 246.94, 0, 261.63, -1, -1, 0,
+      311.13, -1, -1, -1, -1, -1, 261.63, 261.63,
+      311.13, -1, 311.13, -1, 233.08, 0, 233.08, 233.08,
+      293.66, -1, -1, 0, 246.94, -1, 196.0, -1,
+      196.0, -1, -1, 0, 196.0, -1, -1, 0,
+      // Verse (solo shanty lead with subtle fifth drone on cadences)
+      0, 0, 0, 0, 0, 0, 0, 0,
+      196.0, -1, 261.63, 0, 261.63, 0, 261.63, 0,
+      261.63, -1, 207.65, 0, 207.65, 0, 207.65, 261.63,
+      311.13, -1, 261.63, 0, 261.63, -1, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      196.0, -1, 261.63, 0, 261.63, 0, 261.63, 0,
+      293.66, -1, -1, 0, 246.94, -1, 196.0, -1,
+      196.0, -1, -1, 0, 196.0, -1, -1, 0,
     ],
     bass: [
-      // Deep Bass Vocal (Bobby Waters / Luke Taylor style C2 - G2 - Ab1 - Eb2)
-      // Bar 1: Cm (C2 -> G2)
-      65.41, 0, 130.81, 0, 98.0, 0, 130.81, 0,
-      65.41, 0, 130.81, 0, 98.0, 0, 130.81, 0,
-      // Bar 2: Fm -> Cm
-      87.31, 0, 174.61, 0, 87.31, 0, 174.61, 0,
-      65.41, 0, 130.81, 0, 65.41, 0, 130.81, 0,
-      // Bar 3: Cm
-      65.41, 0, 130.81, 0, 98.0, 0, 130.81, 0,
-      65.41, 0, 130.81, 0, 98.0, 0, 130.81, 0,
-      // Bar 4: G -> Cm
-      98.0, 0, 196.0, 0, 98.0, 0, 146.83, 0,
-      98.0, 0, 73.42, 0, 65.41, 0, 130.81, 0,
-      // Bar 5: Ab -> Eb (Chorus bass drop!)
-      103.83, 0, 207.65, 0, 103.83, 0, 207.65, 0,
-      77.78, 0, 155.56, 0, 77.78, 0, 155.56, 0,
-      // Bar 6: Fm -> Cm
-      87.31, 0, 174.61, 0, 87.31, 0, 174.61, 0,
-      65.41, 0, 130.81, 0, 65.41, 0, 130.81, 0,
-      // Bar 7: Ab -> Eb
-      103.83, 0, 207.65, 0, 103.83, 0, 207.65, 0,
-      77.78, 0, 155.56, 0, 77.78, 0, 155.56, 0,
-      // Bar 8: G -> Cm
-      98.0, 0, 196.0, 0, 98.0, 0, 146.83, 0,
-      98.0, 0, 73.42, 0, 65.41, 0, 130.81, 65.41,
+      // Chorus Line 1: Ab (Ab2-Eb3) -> Eb (Eb2-Bb2)
+      103.83, 0, 155.56, 0, 103.83, 0, 155.56, 0,
+      155.56, 0, 233.08, 0, 155.56, 0, 233.08, 0,
+      // Chorus Line 2: Fm (F2-C3) -> Cm (C2-G2)
+      87.31, 0, 130.81, 0, 87.31, 0, 130.81, 0,
+      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
+      // Chorus Line 3: Ab -> Eb
+      103.83, 0, 155.56, 0, 103.83, 0, 155.56, 0,
+      155.56, 0, 233.08, 0, 155.56, 0, 233.08, 0,
+      // Chorus Line 4: G (G2-D3) -> Cm (C2-G2)
+      98.0, 0, 146.83, 0, 98.0, 0, 146.83, 0,
+      98.0, 0, 146.83, 0, 130.81, 0, 196.0, 0,
+      // Verse Line 1: Cm
+      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
+      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
+      // Verse Line 2: Fm -> Cm
+      87.31, 0, 130.81, 0, 87.31, 0, 130.81, 0,
+      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
+      // Verse Line 3: Cm
+      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
+      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
+      // Verse Line 4: G -> Cm
+      98.0, 0, 146.83, 0, 98.0, 0, 146.83, 0,
+      98.0, 0, 146.83, 0, 130.81, 0, 196.0, 0,
     ],
   },
   'neon-light': {
@@ -435,10 +436,23 @@ class SoundEngine {
     }
 
     const now = this.ctx.currentTime;
+    const countSustainedDuration = (arr, startIdx, baseDecay) => {
+      if (!Array.isArray(arr)) return baseDecay;
+      let holdSteps = 1;
+      for (let i = startIdx + 1; i < arr.length; i++) {
+        if (arr[i] === -1) {
+          holdSteps++;
+        } else {
+          break;
+        }
+      }
+      if (holdSteps <= 1) return baseDecay;
+      return Math.max(baseDecay, (holdSteps * track.stepMs) / 1000);
+    };
+
     const leadFreq = track.lead[stepIdx];
-    const harmonyFreq = Array.isArray(track.harmony)
-      ? track.harmony[stepIdx % track.harmony.length]
-      : 0;
+    const hIdx = Array.isArray(track.harmony) ? stepIdx % track.harmony.length : 0;
+    const harmonyFreq = Array.isArray(track.harmony) ? track.harmony[hIdx] : 0;
     const bassFreq = track.bass[stepIdx % track.bass.length];
 
     if (leadFreq > 0) {
@@ -447,9 +461,10 @@ class SoundEngine {
       osc.type = track.leadType;
       osc.frequency.setValueAtTime(leadFreq, now);
 
+      const leadDur = countSustainedDuration(track.lead, stepIdx, track.leadDecay);
       gain.gain.setValueAtTime(0.001, now);
       gain.gain.linearRampToValueAtTime(track.leadGain, now + 0.018);
-      gain.gain.exponentialRampToValueAtTime(0.0008, now + track.leadDecay);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + leadDur);
 
       if (
         this.currentTheme === 'neon-dark' ||
@@ -474,7 +489,7 @@ class SoundEngine {
 
       gain.connect(this.ctx.destination);
       osc.start(now);
-      osc.stop(now + track.leadDecay + 0.02);
+      osc.stop(now + leadDur + 0.02);
     }
 
     if (harmonyFreq > 0) {
@@ -484,15 +499,15 @@ class SoundEngine {
       osc.frequency.setValueAtTime(harmonyFreq, now);
 
       const hGain = track.harmonyGain || 0.022;
-      const hDecay = track.harmonyDecay || 0.25;
+      const hDur = countSustainedDuration(track.harmony, hIdx, track.harmonyDecay || 0.25);
       gain.gain.setValueAtTime(0.001, now);
       gain.gain.linearRampToValueAtTime(hGain, now + 0.018);
-      gain.gain.exponentialRampToValueAtTime(0.0008, now + hDecay);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + hDur);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
       osc.start(now);
-      osc.stop(now + hDecay + 0.02);
+      osc.stop(now + hDur + 0.02);
     }
 
     if (bassFreq > 0) {
