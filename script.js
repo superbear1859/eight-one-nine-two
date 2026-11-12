@@ -895,6 +895,7 @@ class Game8192 {
     this.won = false;
     this.keepPlaying = false;
     this.over = false;
+    this.battlePaused = false;
 
     this.initTheme();
     this.updateSoundUI();
@@ -1131,6 +1132,7 @@ class Game8192 {
     this.won = false;
     this.keepPlaying = false;
     this.over = false;
+    this.battlePaused = false;
 
     this.spawnRandomTile(1);
     this.spawnRandomTile(1);
@@ -1288,8 +1290,8 @@ class Game8192 {
   }
 
   move(direction) {
-    // Block moves if overlay is active (either game over, or win screen awaiting decision)
-    if (this.over || (this.won && !this.keepPlaying)) return;
+    // Block moves if battle finished, game over, or win screen awaiting decision
+    if (this.battlePaused || this.over || (this.won && !this.keepPlaying)) return;
 
     if (this.smashMode) {
       this.setSmashMode(false);
@@ -1527,7 +1529,7 @@ class Game8192 {
   }
 
   setSmashMode(active) {
-    if (active && (this.smashesRemaining <= 0 || this.getTileCount() <= 1)) {
+    if (active && (this.battlePaused || this.smashesRemaining <= 0 || this.getTileCount() <= 1)) {
       return;
     }
     if (active && this.swapMode) {
@@ -1555,7 +1557,7 @@ class Game8192 {
   }
 
   setDoubleMode(active) {
-    if (active && (this.doublesRemaining <= 0 || this.getTileCount() < 1)) {
+    if (active && (this.battlePaused || this.doublesRemaining <= 0 || this.getTileCount() < 1)) {
       return;
     }
     if (active && this.smashMode) {
@@ -1588,7 +1590,7 @@ class Game8192 {
   }
 
   setSwapMode(active) {
-    if (active && (this.swapsRemaining <= 0 || this.getTileCount() < 2)) {
+    if (active && (this.battlePaused || this.swapsRemaining <= 0 || this.getTileCount() < 2)) {
       return;
     }
     if (active && this.smashMode) {
@@ -1617,7 +1619,7 @@ class Game8192 {
   }
 
   handleSwapTileClick(r, c) {
-    if (!this.swapMode || this.swapsRemaining <= 0) return;
+    if (this.battlePaused || !this.swapMode || this.swapsRemaining <= 0) return;
     const clickedTile = this.grid[r] && this.grid[r][c];
     if (!clickedTile) return;
 
@@ -1697,7 +1699,7 @@ class Game8192 {
   }
 
   smashTileAt(r, c) {
-    if (!this.smashMode || this.smashesRemaining <= 0) return;
+    if (this.battlePaused || !this.smashMode || this.smashesRemaining <= 0) return;
     const targetTile = this.grid[r] && this.grid[r][c];
     if (!targetTile) return;
 
@@ -1745,7 +1747,7 @@ class Game8192 {
   }
 
   doubleTileAt(r, c) {
-    if (!this.doubleMode || this.doublesRemaining <= 0) return;
+    if (this.battlePaused || !this.doubleMode || this.doublesRemaining <= 0) return;
     const targetTile = this.grid[r] && this.grid[r][c];
     if (!targetTile) return;
 
@@ -1831,7 +1833,7 @@ class Game8192 {
   }
 
   undo() {
-    if (this.undosRemaining <= 0 || this.history.length === 0) return;
+    if (this.battlePaused || this.undosRemaining <= 0 || this.history.length === 0) return;
 
     this.setSmashMode(false);
     this.setSwapMode(false);
@@ -1988,7 +1990,10 @@ class Game8192 {
       return;
     }
 
-    if (this.won && !this.keepPlaying) {
+    if (this.battlePaused) {
+      this.overlay.classList.add('hidden');
+      this.overlay.classList.remove('win-state');
+    } else if (this.won && !this.keepPlaying) {
       this.overlay.classList.remove('hidden');
       this.overlay.classList.add('win-state');
       this.overlayTitle.textContent = 'You reached 8192!';
@@ -2648,7 +2653,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const battleCloseBtn = document.getElementById('battle-close-btn');
   const battleDurationGroup = document.getElementById('battle-duration-group');
   const battleTargetGridGroup = document.getElementById('battle-target-grid-group');
-  const battleRaceTargetLabel = document.getElementById('battle-race-target-label');
   const battleTargetHint = document.getElementById('battle-target-hint');
   const battleStartBtn = document.getElementById('battle-start-btn');
 
@@ -2664,7 +2668,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const battleState = {
     active: false,
     finished: false,
-    type: 'timer', // 'timer' (Highest Number Timed) | 'race10' (Race to Target Grid)
+    type: 'timer', // 'timer' (Highest Number Timed) | 'race10' (Race to a Grid)
     players: 2,
     durationSec: 120,
     targetGrid: 10, // Target grid size for race mode (5..10)
@@ -2717,9 +2721,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (battleTargetGridGroup) {
       battleTargetGridGroup.classList.toggle('hidden', battleState.type !== 'race10');
-    }
-    if (battleRaceTargetLabel) {
-      battleRaceTargetLabel.textContent = `${battleState.targetGrid}×${battleState.targetGrid}`;
     }
     if (battleTargetHint) {
       battleTargetHint.textContent = buildTargetGridHint(battleState.targetGrid);
@@ -2805,9 +2806,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if there is a tie for 1st
     const tiedWinners = ranked.filter((g) => comparePlayersForBattle(g, winner) === 0);
 
-    // Pause all boards by showing their win/over overlay or blocking moves
+    // Pause all participant boards cleanly without showing Game Over
     participants.forEach((g) => {
-      g.over = true;
+      g.battlePaused = true;
+      if (g.smashMode) g.setSmashMode(false);
+      if (g.swapMode) g.setSwapMode(false);
+      if (g.doubleMode) g.setDoubleMode(false);
+      g.updateUI();
     });
 
     game1.sound.playWinFanfare();
@@ -2867,10 +2872,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (battleResultsModal) battleResultsModal.classList.add('hidden');
 
     window.games8192.forEach((g) => {
+      g.battlePaused = false;
       g.rootEl.classList.remove('battle-leader');
       if (g.battleToggleBtn) {
         g.battleToggleBtn.classList.remove('active');
       }
+      g.updateUI();
     });
   };
 
@@ -2883,6 +2890,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (battleModal) battleModal.classList.add('hidden');
     if (battleResultsModal) battleResultsModal.classList.add('hidden');
+
+    // Clear any prior post-battle pause across all boards before resetting match
+    window.games8192.forEach((g) => {
+      g.battlePaused = false;
+    });
 
     // Switch to the chosen number of split screens (2, 3, or 4)
     applyScreenCount(battleState.players);
