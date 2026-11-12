@@ -2393,6 +2393,19 @@ body {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
 }
 
+.battle-grid-pills .battle-pill-btn {
+  flex: 1 1 58px;
+  padding: 8px 6px;
+}
+
+.battle-target-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
 .battle-modal-footer {
   display: flex;
   justify-content: flex-end;

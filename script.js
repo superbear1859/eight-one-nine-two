@@ -115,99 +115,132 @@ const THEME_MUSIC = {
       174.61, 0, 261.63, 0, 196.0, 0, 246.94, 0,
     ],
   },
-  // "Wellerman" (Sea Shanty — Chorus first, then Verse in C minor; -1 in lead array sustains the previous note!)
+  // "Soon May the Wellerman Come" (arr. A. Evstyugov) in A Minor (Right-Hand Melody + Left-Hand Chords)
   'rainbow-dark': {
-    name: 'Wellerman (Sea Shanty)',
-    stepMs: 138,
-    leadType: 'sawtooth',
-    leadGain: 0.036,
-    leadDecay: 0.24,
-    harmonyType: 'triangle',
-    harmonyGain: 0.02,
-    harmonyDecay: 0.24,
+    name: 'Wellerman (Piano)',
+    stepMs: 210,
+    pianoStyle: true,
+    leadType: 'triangle',
+    leadGain: 0.052,
+    leadDecay: 0.34,
+    harmonyType: 'sine',
+    harmonyGain: 0.024,
+    harmonyDecay: 0.38,
     bassType: 'triangle',
-    bassGain: 0.044,
-    bassDecay: 0.25,
+    bassGain: 0.036,
+    bassDecay: 0.42,
     lead: [
-      // CHORUS Line 1: "Soon may the Wel-ler-man come, to"
-      // Soon (C5 6 steps), may the (Ab4 2 steps), Wel- (Bb4 2), -ler- (Bb4 2), -man (G4 2), come (G4 1), to (G4 1)
-      523.25, -1, -1, -1, -1, -1, 415.3, -1,
-      466.16, -1, 466.16, -1, 392.0, 0, 392.0, 392.0,
-      // CHORUS Line 2: "bring us su-gar and tea and rum"
-      // bring (Ab4 2), us (F4 2), su- (F4 2), -gar (F4 1), and (Ab4 1), tea (C5 2), and (G4 2), rum (G4 4)
-      415.3, -1, 349.23, 0, 349.23, 0, 349.23, 415.3,
-      523.25, -1, 392.0, 0, 392.0, -1, -1, 0,
-      // CHORUS Line 3: "One day, when the tongu-ing is done, we'll"
-      // One (C5 6 steps), day (Ab4 1), when the (Ab4 1), tongu- (Bb4 2), -ing (Bb4 2), is (G4 2), done (G4 1), we'll (G4 1)
-      523.25, -1, -1, -1, -1, -1, 415.3, 415.3,
-      466.16, -1, 466.16, -1, 392.0, 0, 392.0, 392.0,
-      // CHORUS Line 4: "take our leave and go!"
-      // take (G4 4), our (F4 2), leave (Eb4 2), and (D4 4), go! (C4 4)
-      392.0, -1, -1, 0, 349.23, -1, 311.13, -1,
-      293.66, -1, -1, 0, 261.63, -1, -1, 196.0,
+      // Pickup (beats 3-4, no chord): "There" (h, f5) E4
+      329.63, -1, -1, -1,
+      // Bar 1 (Am): "once(q,1) was(e,1) a(e,1) ship(q,1) that(q,3)" -> A3 A3 A3 A3 C4
+      220.0, -1, 220.0, 220.0, 220.0, -1, 261.63, -1,
+      // Bar 2 (Am): "put(q,5) to(q,4) sea,(q,3) and(e,2) the(e,2)" -> E4 E4 E4 E4 E4
+      329.63, -1, 329.63, -1, 329.63, -1, 329.63, 329.63,
+      // Bar 3 (Dm): "name(q,3) of(e,1) the(e,1) ship(q,1) was(e,3) the(e,3)" -> F4 D4 D4 D4 F4 F4
+      349.23, -1, 293.66, 293.66, 293.66, -1, 349.23, 349.23,
+      // Bar 4 (Am): "Bil-(e,5) ly(e,5) o'(q,2) Tea.(dq,3) The(e,4)" -> A4 A4 E4 E4 E4
+      440.0, 440.0, 329.63, -1, 329.63, -1, -1, 329.63,
+      // Bar 5 (Am): "winds(q,1) blew(q,2) hard,(q,3) her(q,1)" -> A3 B3 C4 D4
+      220.0, -1, 246.94, -1, 261.63, -1, 293.66, -1,
+      // Bar 6 (Am): "bow(q,2) dipped(q,3) down.(h,4)" -> E4 E4 E4
+      329.63, -1, 329.63, -1, 329.63, -1, -1, -1,
+      // Bar 7 (Dm -> E7): "Blow,(q,5) me(q,4) Bil-(e,3) ly(e,3) boys,(q,2)" -> F4 D4 C4 C4 B3
+      349.23, -1, 293.66, -1, 261.63, 261.63, 246.94, -1,
+      // Bar 8 (Am): "blow!(w,1)" -> A3
+      220.0, -1, -1, -1, -1, -1, -1, -1,
 
-      // VERSE Line 1: "(There) once was a ship that put to sea, the"
-      // once (C4 4), was (C4 2), a (C4 2), ship (Eb4 2), that (G4 2), put (G4 2), to (G4 1), sea/the (G4 1)
-      261.63, -1, -1, 0, 261.63, 0, 261.63, 0,
-      311.13, -1, 392.0, 0, 392.0, 0, 392.0, 392.0,
-      // VERSE Line 2: "name of the ship was the Bil-ly o' Tea, the"
-      // name (Ab4 2), of (F4 2), the (F4 2), ship (F4 1), was the (Ab4 1), Bil- (C5 2), -ly o' (G4 2), Tea (G4 3), the (G4 1)
-      415.3, -1, 349.23, 0, 349.23, 0, 349.23, 415.3,
-      523.25, -1, 392.0, 0, 392.0, -1, 0, 196.0,
-      // VERSE Line 3: "winds blew up, her bow dipped down, oh"
-      // winds (C4 4), blew (C4 2), up (C4 2), her (Eb4 2), bow (G4 2), dipped (G4 2), down (G4 1), oh (G4 1)
-      261.63, -1, -1, 0, 261.63, 0, 261.63, 0,
-      311.13, -1, 392.0, 0, 392.0, 0, 392.0, 392.0,
-      // VERSE Line 4: "blow, my bul-ly boys, blow (HUH!)"
-      // blow (G4 4), my (F4 2), bul-ly (Eb4 2), boys (D4 4), blow (C4 4)
-      392.0, -1, -1, 0, 349.23, -1, 311.13, -1,
-      293.66, -1, -1, 0, 261.63, -1, -1, 0,
+      // Bar 9 (F -> G9): "Soon(h,5) may(dq,5) the(e,3)" -> A4 A4 F4
+      440.0, -1, -1, -1, 440.0, -1, -1, 349.23,
+      // Bar 10 (C): "Wel-(e,4) ler-(e,4) man(q,2) come(dq,3) to(e,4)" -> G4 G4 E4 E4 E4
+      392.0, 392.0, 329.63, -1, 329.63, -1, -1, 329.63,
+      // Bar 11 (Dm): "bring(q,5) us(q,3) su-(e,3) gar(e,3) and(q,5)" -> F4 D4 D4 D4 F4
+      349.23, -1, 293.66, -1, 293.66, 293.66, 349.23, -1,
+      // Bar 12 (Am): "tea(q,4) and(q,2) rum.(h,1)" -> E4 C4 A3
+      329.63, -1, 261.63, -1, 220.0, -1, -1, -1,
+      // Bar 13 (F -> G7): "One(h,5) day,(q,5) when(e,4) the(e,3)" -> A4 A4 G4 F4
+      440.0, -1, -1, -1, 440.0, -1, 392.0, 349.23,
+      // Bar 14 (C): "long-(e,4) ing(e,4) is(q,2) gone,(q,3) we'll(q,4)" -> G4 G4 E4 E4 E4
+      392.0, 392.0, 329.63, -1, 329.63, -1, 329.63, -1,
+      // Bar 15 (E7): "take(q,5) our(q,4) leave(q,3) and(q,2)" -> E4 D4 C4 B3
+      329.63, -1, 293.66, -1, 261.63, -1, 246.94, -1,
+      // Bar 16 (Am, beats 1-2 turnaround into pickup): "go." -> A3
+      220.0, -1, -1, -1,
     ],
     harmony: [
-      // Chorus harmony (singing thirds/sixths underneath the lead)
-      311.13, -1, -1, -1, -1, -1, 261.63, -1,
-      311.13, -1, 311.13, -1, 233.08, 0, 233.08, 233.08,
-      261.63, -1, 207.65, 0, 207.65, 0, 207.65, 261.63,
-      311.13, -1, 246.94, 0, 261.63, -1, -1, 0,
-      311.13, -1, -1, -1, -1, -1, 261.63, 261.63,
-      311.13, -1, 311.13, -1, 233.08, 0, 233.08, 233.08,
-      293.66, -1, -1, 0, 246.94, -1, 196.0, -1,
-      196.0, -1, -1, 0, 196.0, -1, -1, 0,
-      // Verse (solo shanty lead with subtle fifth drone on cadences)
-      0, 0, 0, 0, 0, 0, 0, 0,
-      196.0, -1, 261.63, 0, 261.63, 0, 261.63, 0,
-      261.63, -1, 207.65, 0, 207.65, 0, 207.65, 261.63,
-      311.13, -1, 261.63, 0, 261.63, -1, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0,
-      196.0, -1, 261.63, 0, 261.63, 0, 261.63, 0,
-      293.66, -1, -1, 0, 246.94, -1, 196.0, -1,
-      196.0, -1, -1, 0, 196.0, -1, -1, 0,
+      // Left-hand chord upper voices on beats 2 & 4 (kept below melody register)
+      // Pickup: rest
+      0, 0, 0, 0,
+      // Bar 1: Am (E3=164.81)
+      0, 0, 164.81, 0, 0, 0, 164.81, 0,
+      // Bar 2: Am (E3)
+      0, 0, 164.81, 0, 0, 0, 164.81, 0,
+      // Bar 3: Dm (A3=220.0)
+      0, 0, 220.0, 0, 0, 0, 220.0, 0,
+      // Bar 4: Am (E3)
+      0, 0, 164.81, 0, 0, 0, 164.81, 0,
+      // Bar 5: Am (E3)
+      0, 0, 164.81, 0, 0, 0, 164.81, 0,
+      // Bar 6: Am (E3)
+      0, 0, 164.81, 0, 0, 0, 164.81, 0,
+      // Bar 7: Dm (A3) -> E7 (G#3=207.65)
+      0, 0, 220.0, 0, 0, 0, 207.65, 0,
+      // Bar 8: Am (E3)
+      0, 0, 164.81, 0, 164.81, -1, -1, 0,
+
+      // Bar 9: F (A3=220.0) -> G9 (B3=246.94)
+      0, 0, 220.0, 0, 0, 0, 246.94, 0,
+      // Bar 10: C (C4=261.63)
+      0, 0, 261.63, 0, 0, 0, 261.63, 0,
+      // Bar 11: Dm (A3=220.0)
+      0, 0, 220.0, 0, 0, 0, 220.0, 0,
+      // Bar 12: Am (E3=164.81)
+      0, 0, 164.81, 0, 0, 0, 164.81, 0,
+      // Bar 13: F (A3=220.0) -> G7 (B3=246.94)
+      0, 0, 220.0, 0, 0, 0, 246.94, 0,
+      // Bar 14: C (C4=261.63)
+      0, 0, 261.63, 0, 0, 0, 261.63, 0,
+      // Bar 15: E7 (G#3=207.65)
+      0, 0, 207.65, 0, 0, 0, 207.65, 0,
+      // Bar 16: Am (E3) beats 1-2
+      0, 0, 164.81, 0,
     ],
     bass: [
-      // Chorus Line 1: Ab (Ab2-Eb3) -> Eb (Eb2-Bb2)
-      103.83, 0, 155.56, 0, 103.83, 0, 155.56, 0,
-      155.56, 0, 233.08, 0, 155.56, 0, 233.08, 0,
-      // Chorus Line 2: Fm (F2-C3) -> Cm (C2-G2)
-      87.31, 0, 130.81, 0, 87.31, 0, 130.81, 0,
-      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
-      // Chorus Line 3: Ab -> Eb
-      103.83, 0, 155.56, 0, 103.83, 0, 155.56, 0,
-      155.56, 0, 233.08, 0, 155.56, 0, 233.08, 0,
-      // Chorus Line 4: G (G2-D3) -> Cm (C2-G2)
-      98.0, 0, 146.83, 0, 98.0, 0, 146.83, 0,
-      98.0, 0, 146.83, 0, 130.81, 0, 196.0, 0,
-      // Verse Line 1: Cm
-      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
-      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
-      // Verse Line 2: Fm -> Cm
-      87.31, 0, 130.81, 0, 87.31, 0, 130.81, 0,
-      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
-      // Verse Line 3: Cm
-      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
-      130.81, 0, 196.0, 0, 130.81, 0, 196.0, 0,
-      // Verse Line 4: G -> Cm
-      98.0, 0, 146.83, 0, 98.0, 0, 146.83, 0,
-      98.0, 0, 146.83, 0, 130.81, 0, 196.0, 0,
+      // Left-hand chord roots on beats 1 & 3 + chord inner tones on beats 2 & 4
+      // Pickup: rest
+      0, 0, 0, 0,
+      // Bar 1: Am (A2=110.0 / C3=130.81)
+      110.0, -1, 130.81, 0, 110.0, -1, 130.81, 0,
+      // Bar 2: Am
+      110.0, -1, 130.81, 0, 110.0, -1, 130.81, 0,
+      // Bar 3: Dm (D3=146.83 / F3=174.61 / A2=110.0)
+      146.83, -1, 174.61, 0, 110.0, -1, 174.61, 0,
+      // Bar 4: Am
+      110.0, -1, 130.81, 0, 110.0, -1, 130.81, 0,
+      // Bar 5: Am
+      110.0, -1, 130.81, 0, 110.0, -1, 130.81, 0,
+      // Bar 6: Am
+      110.0, -1, 130.81, 0, 110.0, -1, 130.81, 0,
+      // Bar 7: Dm -> E7 (E2=82.41 / D3=146.83)
+      146.83, -1, 174.61, 0, 82.41, -1, 146.83, 0,
+      // Bar 8: Am
+      110.0, -1, 130.81, 0, 110.0, -1, -1, 0,
+
+      // Bar 9: F (F2=87.31 / C3=130.81) -> G9 (G2=98.0 / F3=174.61)
+      87.31, -1, 130.81, 0, 98.0, -1, 174.61, 0,
+      // Bar 10: C (C3=130.81 / E3=164.81 / G2=98.0)
+      130.81, -1, 164.81, 0, 98.0, -1, 164.81, 0,
+      // Bar 11: Dm
+      146.83, -1, 174.61, 0, 110.0, -1, 174.61, 0,
+      // Bar 12: Am
+      110.0, -1, 130.81, 0, 110.0, -1, 130.81, 0,
+      // Bar 13: F -> G7 (G2=98.0 / F3=174.61)
+      87.31, -1, 130.81, 0, 98.0, -1, 174.61, 0,
+      // Bar 14: C
+      130.81, -1, 164.81, 0, 98.0, -1, 164.81, 0,
+      // Bar 15: E7 (E2=82.41 / D3=146.83 / B2=123.47)
+      82.41, -1, 146.83, 0, 123.47, -1, 146.83, 0,
+      // Bar 16: Am beats 1-2
+      110.0, -1, 130.81, 0,
     ],
   },
   'neon-light': {
@@ -315,6 +348,8 @@ const THEME_MUSIC = {
 class SoundEngine {
   constructor() {
     this.ctx = null;
+    this.musicMasterGain = null;
+    this.musicVolume = 1.7;
     const savedSound = localStorage.getItem(STORAGE_KEYS.SOUND);
     this.enabled = savedSound !== null ? savedSound === 'true' : true;
     const savedMusic = localStorage.getItem(STORAGE_KEYS.MUSIC);
@@ -347,6 +382,16 @@ class SoundEngine {
     if (this.musicEnabled && !this.musicTimer) {
       this.startMusicLoop();
     }
+  }
+
+  getMusicOutput() {
+    if (!this.ctx) return null;
+    if (!this.musicMasterGain && typeof this.ctx.createGain === 'function') {
+      this.musicMasterGain = this.ctx.createGain();
+      this.musicMasterGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
+      this.musicMasterGain.connect(this.ctx.destination);
+    }
+    return this.musicMasterGain || this.ctx.destination;
   }
 
   toggle() {
@@ -436,6 +481,7 @@ class SoundEngine {
     }
 
     const now = this.ctx.currentTime;
+    const musicOut = this.getMusicOutput();
     const countSustainedDuration = (arr, startIdx, baseDecay) => {
       if (!Array.isArray(arr)) return baseDecay;
       let holdSteps = 1;
@@ -453,7 +499,8 @@ class SoundEngine {
     const leadFreq = track.lead[stepIdx];
     const hIdx = Array.isArray(track.harmony) ? stepIdx % track.harmony.length : 0;
     const harmonyFreq = Array.isArray(track.harmony) ? track.harmony[hIdx] : 0;
-    const bassFreq = track.bass[stepIdx % track.bass.length];
+    const bIdx = stepIdx % track.bass.length;
+    const bassFreq = track.bass[bIdx];
 
     if (leadFreq > 0) {
       const osc = this.ctx.createOscillator();
@@ -462,9 +509,25 @@ class SoundEngine {
       osc.frequency.setValueAtTime(leadFreq, now);
 
       const leadDur = countSustainedDuration(track.lead, stepIdx, track.leadDecay);
+      const attackTime = track.pianoStyle ? 0.008 : 0.018;
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(track.leadGain, now + 0.018);
+      gain.gain.linearRampToValueAtTime(track.leadGain, now + attackTime);
       gain.gain.exponentialRampToValueAtTime(0.0008, now + leadDur);
+
+      if (track.pianoStyle) {
+        // Add subtle 2nd-harmonic piano overtone for realistic piano key timbre
+        const overtoneOsc = this.ctx.createOscillator();
+        const overtoneGain = this.ctx.createGain();
+        overtoneOsc.type = 'sine';
+        overtoneOsc.frequency.setValueAtTime(leadFreq * 2, now);
+        overtoneGain.gain.setValueAtTime(0.001, now);
+        overtoneGain.gain.linearRampToValueAtTime(track.leadGain * 0.28, now + 0.006);
+        overtoneGain.gain.exponentialRampToValueAtTime(0.0005, now + leadDur * 0.65);
+        overtoneOsc.connect(overtoneGain);
+        overtoneGain.connect(musicOut);
+        overtoneOsc.start(now);
+        overtoneOsc.stop(now + leadDur * 0.65 + 0.02);
+      }
 
       if (
         this.currentTheme === 'neon-dark' ||
@@ -477,7 +540,7 @@ class SoundEngine {
           this.currentTheme === 'neon-rainbow-dark'
             ? 2400
             : this.currentTheme === 'rainbow-dark'
-            ? 1900
+            ? 2600
             : 1650,
           now
         );
@@ -487,7 +550,7 @@ class SoundEngine {
         osc.connect(gain);
       }
 
-      gain.connect(this.ctx.destination);
+      gain.connect(musicOut);
       osc.start(now);
       osc.stop(now + leadDur + 0.02);
     }
@@ -501,11 +564,11 @@ class SoundEngine {
       const hGain = track.harmonyGain || 0.022;
       const hDur = countSustainedDuration(track.harmony, hIdx, track.harmonyDecay || 0.25);
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(hGain, now + 0.018);
+      gain.gain.linearRampToValueAtTime(hGain, now + 0.012);
       gain.gain.exponentialRampToValueAtTime(0.0008, now + hDur);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(musicOut);
       osc.start(now);
       osc.stop(now + hDur + 0.02);
     }
@@ -516,9 +579,10 @@ class SoundEngine {
       osc.type = track.bassType;
       osc.frequency.setValueAtTime(bassFreq, now);
 
+      const bDur = countSustainedDuration(track.bass, bIdx, track.bassDecay);
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(track.bassGain, now + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0008, now + track.bassDecay);
+      gain.gain.linearRampToValueAtTime(track.bassGain, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + bDur);
 
       if (
         this.currentTheme === 'neon-dark' ||
@@ -529,16 +593,16 @@ class SoundEngine {
       ) {
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(520, now);
+        filter.frequency.setValueAtTime(track.pianoStyle ? 750 : 520, now);
         osc.connect(filter);
         filter.connect(gain);
       } else {
         osc.connect(gain);
       }
 
-      gain.connect(this.ctx.destination);
+      gain.connect(musicOut);
       osc.start(now);
-      osc.stop(now + track.bassDecay + 0.02);
+      osc.stop(now + bDur + 0.02);
     }
   }
 
@@ -2583,6 +2647,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const battleModal = document.getElementById('battle-modal');
   const battleCloseBtn = document.getElementById('battle-close-btn');
   const battleDurationGroup = document.getElementById('battle-duration-group');
+  const battleTargetGridGroup = document.getElementById('battle-target-grid-group');
+  const battleRaceTargetLabel = document.getElementById('battle-race-target-label');
+  const battleTargetHint = document.getElementById('battle-target-hint');
   const battleStartBtn = document.getElementById('battle-start-btn');
 
   const battleResultsModal = document.getElementById('battle-results-modal');
@@ -2597,9 +2664,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const battleState = {
     active: false,
     finished: false,
-    type: 'timer', // 'timer' (Highest Number Timed) | 'race10' (Race to 10x10 Grid)
+    type: 'timer', // 'timer' (Highest Number Timed) | 'race10' (Race to Target Grid)
     players: 2,
     durationSec: 120,
+    targetGrid: 10, // Target grid size for race mode (5..10)
     remainingSec: 120,
     elapsedSec: 0,
     intervalId: null,
@@ -2610,6 +2678,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const mins = Math.floor(s / 60);
     const secs = s % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const buildTargetGridHint = (targetSize) => {
+    const steps = [];
+    for (let s = 4; s <= targetSize; s++) {
+      steps.push(`${s}×${s}`);
+    }
+    const prevSize = targetSize - 1;
+    const finalReq = getUnlockTargetForSize(prevSize);
+    return `Path: ${steps.join(' → ')} (reach ${finalReq} on ${prevSize}×${prevSize})`;
+  };
+
+  const syncBattleModalUI = () => {
+    Array.from(document.querySelectorAll('[data-battle-type]')).forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-battle-type') === battleState.type);
+    });
+    Array.from(document.querySelectorAll('[data-battle-players]')).forEach((btn) => {
+      btn.classList.toggle(
+        'active',
+        Number(btn.getAttribute('data-battle-players')) === battleState.players
+      );
+    });
+    Array.from(document.querySelectorAll('[data-battle-seconds]')).forEach((btn) => {
+      btn.classList.toggle(
+        'active',
+        Number(btn.getAttribute('data-battle-seconds')) === battleState.durationSec
+      );
+    });
+    Array.from(document.querySelectorAll('[data-battle-target-grid]')).forEach((btn) => {
+      btn.classList.toggle(
+        'active',
+        Number(btn.getAttribute('data-battle-target-grid')) === battleState.targetGrid
+      );
+    });
+    if (battleDurationGroup) {
+      battleDurationGroup.classList.toggle('hidden', battleState.type !== 'timer');
+    }
+    if (battleTargetGridGroup) {
+      battleTargetGridGroup.classList.toggle('hidden', battleState.type !== 'race10');
+    }
+    if (battleRaceTargetLabel) {
+      battleRaceTargetLabel.textContent = `${battleState.targetGrid}×${battleState.targetGrid}`;
+    }
+    if (battleTargetHint) {
+      battleTargetHint.textContent = buildTargetGridHint(battleState.targetGrid);
+    }
   };
 
   const getActiveBattleGames = () => {
@@ -2776,7 +2890,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const participants = getActiveBattleGames();
     participants.forEach((g) => {
       if (battleState.type === 'race10') {
-        // Reset everyone to 4x4 so it's a fair race to unlock & reach 10x10!
+        // Reset everyone to 4x4 so it's a fair race to unlock & reach target grid!
         g.maxUnlockedSize = 4;
         localStorage.setItem(g.getMaxUnlockedKey(), '4');
         for (let s = 4; s <= 10; s++) {
@@ -2807,7 +2921,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (battleHudMode) {
       battleHudMode.textContent =
         battleState.type === 'race10'
-          ? '🏁 Race to 10×10 Grid'
+          ? `🏁 Race to ${battleState.targetGrid}×${battleState.targetGrid} Grid`
           : '⏱️ Highest Number Battle';
     }
     if (battleHudTimer) {
@@ -2841,7 +2955,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     game1.showToast(
       battleState.type === 'race10'
-        ? `🏁 Battle Started! First player to unlock 10×10 wins!`
+        ? `🏁 Battle Started! First player to unlock ${battleState.targetGrid}×${battleState.targetGrid} wins!`
         : `⚔️ Battle Started! Get the highest tile in ${formatClock(battleState.durationSec)}!`
     );
   };
@@ -2852,13 +2966,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateBattleHud();
 
-    // Check instant win condition in Race to 10x10 mode
+    // Check instant win condition in Grid Race mode
     if (
       battleState.type === 'race10' &&
-      (updatedGame.maxUnlockedSize >= 10 || updatedGame.size >= 10)
+      (updatedGame.maxUnlockedSize >= battleState.targetGrid ||
+        updatedGame.size >= battleState.targetGrid)
     ) {
       finishBattle(
-        `🏁 Player ${updatedGame.playerIndex} unlocked the 10×10 grid first in ${formatClock(battleState.elapsedSec)}!`
+        `🏁 Player ${updatedGame.playerIndex} unlocked the ${battleState.targetGrid}×${battleState.targetGrid} grid first in ${formatClock(battleState.elapsedSec)}!`
       );
     }
   };
@@ -2868,13 +2983,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sync default player count pill with active split screen count if >= 2
     if (window.activeScreenCount >= 2 && !battleState.active) {
       battleState.players = window.activeScreenCount;
-      Array.from(document.querySelectorAll('[data-battle-players]')).forEach((btn) => {
-        btn.classList.toggle(
-          'active',
-          Number(btn.getAttribute('data-battle-players')) === battleState.players
-        );
-      });
     }
+    syncBattleModalUI();
     battleModal.classList.remove('hidden');
   };
 
@@ -2882,32 +2992,33 @@ document.addEventListener('DOMContentLoaded', () => {
   Array.from(document.querySelectorAll('[data-battle-type]')).forEach((btn) => {
     btn.addEventListener('click', () => {
       battleState.type = btn.getAttribute('data-battle-type') || 'timer';
-      Array.from(document.querySelectorAll('[data-battle-type]')).forEach((b) =>
-        b.classList.toggle('active', b === btn)
-      );
-      if (battleDurationGroup) {
-        battleDurationGroup.classList.toggle('hidden', battleState.type !== 'timer');
-      }
+      syncBattleModalUI();
     });
   });
 
   Array.from(document.querySelectorAll('[data-battle-players]')).forEach((btn) => {
     btn.addEventListener('click', () => {
       battleState.players = Number(btn.getAttribute('data-battle-players')) || 2;
-      Array.from(document.querySelectorAll('[data-battle-players]')).forEach((b) =>
-        b.classList.toggle('active', b === btn)
-      );
+      syncBattleModalUI();
     });
   });
 
   Array.from(document.querySelectorAll('[data-battle-seconds]')).forEach((btn) => {
     btn.addEventListener('click', () => {
       battleState.durationSec = Number(btn.getAttribute('data-battle-seconds')) || 120;
-      Array.from(document.querySelectorAll('[data-battle-seconds]')).forEach((b) =>
-        b.classList.toggle('active', b === btn)
-      );
+      syncBattleModalUI();
     });
   });
+
+  Array.from(document.querySelectorAll('[data-battle-target-grid]')).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const chosen = Number(btn.getAttribute('data-battle-target-grid')) || 10;
+      battleState.targetGrid = Math.max(5, Math.min(10, chosen));
+      syncBattleModalUI();
+    });
+  });
+
+  syncBattleModalUI();
 
   if (battleCloseBtn && battleModal) {
     battleCloseBtn.addEventListener('click', () => battleModal.classList.add('hidden'));
@@ -2944,7 +3055,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (battleChangeModeBtn) {
     battleChangeModeBtn.addEventListener('click', () => {
       if (battleResultsModal) battleResultsModal.classList.add('hidden');
-      if (battleModal) battleModal.classList.remove('hidden');
+      window.openBattleModal();
     });
   }
 

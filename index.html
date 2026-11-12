@@ -427,8 +427,8 @@
               <div class="battle-option-desc">Fight to merge the highest tile before the countdown clock hits zero! (Score breaks ties)</div>
             </button>
             <button type="button" class="battle-mode-option" data-battle-type="race10">
-              <div class="battle-option-title">🏁 Race to 10×10 Grid</div>
-              <div class="battle-option-desc">Everyone starts on a fresh 4×4 grid! First player to unlock &amp; enter the 10×10 grid wins!</div>
+              <div class="battle-option-title">🏁 Race to <span id="battle-race-target-label">10×10</span> Grid</div>
+              <div class="battle-option-desc">Everyone starts on a fresh 4×4 grid! First player to unlock your chosen target grid (5×5–10×10) wins!</div>
             </button>
           </div>
         </div>
@@ -450,6 +450,19 @@
             <button type="button" class="battle-pill-btn" data-battle-seconds="180">3 Min</button>
             <button type="button" class="battle-pill-btn" data-battle-seconds="300">5 Min</button>
           </div>
+        </div>
+
+        <div class="battle-field-group hidden" id="battle-target-grid-group">
+          <span class="battle-field-label">3. Target Grid Size</span>
+          <div class="battle-pill-row battle-grid-pills" role="group" aria-label="Target Grid Size">
+            <button type="button" class="battle-pill-btn" data-battle-target-grid="5">5×5</button>
+            <button type="button" class="battle-pill-btn" data-battle-target-grid="6">6×6</button>
+            <button type="button" class="battle-pill-btn" data-battle-target-grid="7">7×7</button>
+            <button type="button" class="battle-pill-btn" data-battle-target-grid="8">8×8</button>
+            <button type="button" class="battle-pill-btn" data-battle-target-grid="9">9×9</button>
+            <button type="button" class="battle-pill-btn active" data-battle-target-grid="10">10×10</button>
+          </div>
+          <p class="battle-target-hint" id="battle-target-hint">Path: 4×4 → 5×5 → 6×6 → 7×7 → 8×8 → 9×9 → 10×10 (reach 4096 on 9×9)</p>
         </div>
 
         <div class="battle-modal-footer">
