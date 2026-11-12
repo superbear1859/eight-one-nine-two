@@ -221,6 +221,59 @@
   --cell-size: calc((var(--board-size) - (var(--grid-count) + 1) * var(--grid-gap)) / var(--grid-count));
 }
 
+.split-screen-wrapper[data-screen-count="1"] .app-container.grid-100-mode {
+  --board-size: min(94vw, 760px);
+  max-width: 760px;
+}
+
+.board-container[data-grid-size="100"] {
+  --grid-count: 100;
+  --grid-gap: 0px;
+  --tile-radius: 0px;
+  padding: 4px;
+  --cell-size: calc((var(--board-size) - 8px) / var(--grid-count));
+}
+
+.board-container[data-grid-size="100"] .tile-container {
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+}
+
+.board-container[data-grid-size="100"] .grid-background {
+  display: block;
+  background-color: var(--cell-empty);
+  background-image:
+    linear-gradient(to right, var(--board-bg) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--board-bg) 1px, transparent 1px);
+  background-size: 1% 1%;
+  border-right: 1px solid var(--board-bg);
+  border-bottom: 1px solid var(--board-bg);
+}
+
+.board-container[data-grid-size="100"] .tile {
+  transition: transform 80ms ease-out;
+}
+
+.board-container[data-grid-size="100"] .tile-inner {
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  font-size: calc(var(--cell-size) * 0.52);
+}
+
+.board-container[data-grid-size="100"] .tile-digits-3 .tile-inner {
+  font-size: calc(var(--cell-size) * 0.38);
+}
+
+.board-container[data-grid-size="100"] .tile-digits-4 .tile-inner {
+  font-size: calc(var(--cell-size) * 0.30);
+}
+
+.board-container[data-grid-size="100"] .tile-digits-5 .tile-inner {
+  font-size: calc(var(--cell-size) * 0.24);
+}
+
 @media (max-width: 480px) {
   .board-container[data-grid-size="2"] {
     --grid-gap: 12px;

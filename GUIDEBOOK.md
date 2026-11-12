@@ -46,7 +46,7 @@ Once your corner block reaches `512` or `1024`, random merging won't be enough�
 
 ---
 
-## 4. Grid Progression (`4×4` to `10×10` + Bonus `3×3` & `2×2`)
+## 4. Grid Progression (`4×4` to `10×10` + Bonus `3×3`, `2×2` & `100×100`)
 
 Each grid size has its own saved board and **BEST** block record. Each board doubles the milestone block required to unlock the next size up:
 
@@ -61,6 +61,7 @@ Each grid size has its own saved board and **BEST** block record. Each board dou
 | **10×10** | Reach `4096` on `9×9` | Ultimate 100-cell sandbox for chasing `65536` and beyond! |
 | **3×3 (Bonus)** | Reach `8192` on `10×10` | Tight 9-cell mastery challenge for extreme board planning! |
 | **2×2 (Extreme)** | Press **Activate 2×2** first, then reach `16384` on `10×10` | Ultra-tiny 4-cell chaos challenge—arm the button first! |
+| **100×100 (Mega)** | Reach `32` on `2×2` | Colossal 10,000-cell playground unlocked from 2×2 mastery! |
 
 ---
 

@@ -1,20 +1,25 @@
 /**
  * 8192 — Slide & Merge Puzzle Game
- * Supports 4x4–10x10 progressive grids and bonus 3x3 / extreme 2x2 grids with independent persistence,
+ * Supports 4x4–10x10 progressive grids and bonus 3x3 / 2x2 / 100x100 grids with independent persistence,
  * milestone-earned power-ups, smooth animations, and Web Audio SFX.
  */
 
 const WIN_TARGET = 8192;
 const BONUS_2X2_TARGET = 16384;
+const BONUS_100X100_TARGET = 32;
+const ALL_GRID_SIZES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 100];
 
 // Tile required on grid size `s` to unlock grid size `s + 1`
-// 4x4 -> 5x5: 128, 5x5 -> 6x6: 256, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 10x10 (Armed) -> 2x2: 16384
+// 4x4 -> 5x5: 128, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 10x10 (Armed) -> 2x2: 16384, 2x2 -> 100x100: 32
 function getUnlockTargetForSize(size) {
   return 128 * Math.pow(2, size - 4);
 }
 
 /** Returns { fromSize, requiredTile } needed to unlock `targetSize`. */
 function getGridUnlockRequirement(targetSize) {
+  if (targetSize === 100) {
+    return { fromSize: 2, requiredTile: BONUS_100X100_TARGET };
+  }
   if (targetSize === 2) {
     return { fromSize: 10, requiredTile: BONUS_2X2_TARGET };
   }
@@ -68,6 +73,7 @@ const STORAGE_KEYS = {
   UNLOCKED_3X3: 'game_8192_unlocked_3x3_v1',
   UNLOCKED_2X2: 'game_8192_unlocked_2x2_v1',
   ARMED_2X2: 'game_8192_armed_2x2_v1',
+  UNLOCKED_100X100: 'game_8192_unlocked_100x100_v1',
   THEME: 'game_8192_theme_v1',
   SOUND: 'game_8192_sound_v1',
   MUSIC: 'game_8192_music_v1',
@@ -895,6 +901,7 @@ class Game8192 {
     this.unlocked3x3 = this.computeUnlocked3x3();
     this.unlocked2x2 = this.computeUnlocked2x2();
     this.unlock2x2Armed = !this.unlocked2x2 && this.computeUnlock2x2Armed();
+    this.unlocked100x100 = this.computeUnlocked100x100();
     const savedSize = parseInt(localStorage.getItem(this.getActiveSizeKey()), 10);
     this.size = this.isGridSizeUnlocked(savedSize) ? savedSize : 4;
 
@@ -950,6 +957,10 @@ class Game8192 {
     return `${STORAGE_KEYS.ARMED_2X2}${this.storageSuffix}`;
   }
 
+  getUnlocked100x100Key() {
+    return `${STORAGE_KEYS.UNLOCKED_100X100}${this.storageSuffix}`;
+  }
+
   getActiveSizeKey() {
     return `${STORAGE_KEYS.ACTIVE_SIZE}${this.storageSuffix}`;
   }
@@ -995,7 +1006,22 @@ class Game8192 {
     return localStorage.getItem(this.getArmed2x2Key()) === 'true';
   }
 
+  computeUnlocked100x100() {
+    const saved = localStorage.getItem(this.getUnlocked100x100Key());
+    if (saved !== null) {
+      return saved === 'true';
+    }
+    // Auto-unlock 100x100 if the player already reached 32 on an unlocked 2x2 grid
+    const bestOn2 = parseInt(localStorage.getItem(this.getBestKey(2)), 10) || 0;
+    const unlocked = this.unlocked2x2 && bestOn2 >= BONUS_100X100_TARGET;
+    localStorage.setItem(this.getUnlocked100x100Key(), unlocked ? 'true' : 'false');
+    return unlocked;
+  }
+
   isGridSizeUnlocked(size) {
+    if (size === 100) {
+      return Boolean(this.unlocked100x100);
+    }
     if (size === 2) {
       return Boolean(this.unlocked2x2);
     }
@@ -1005,7 +1031,7 @@ class Game8192 {
     return Number.isInteger(size) && size >= 4 && size <= this.maxUnlockedSize;
   }
 
-  /** Checks whether current progress unlocks the next grid, bonus 3x3, or armed 2x2 challenge. */
+  /** Checks whether current progress unlocks the next progressive grid, bonus grids, or mega 100x100. */
   checkGridUnlock(createdTileValue = 0) {
     let unlockedAny = false;
     if (this.size >= 4 && this.size < 10 && this.maxUnlockedSize === this.size) {
@@ -1040,6 +1066,12 @@ class Game8192 {
       if (newlyUnlocked.length > 0) {
         this.updateSizeButtonsUI(newlyUnlocked);
       }
+    } else if (this.size === 2 && !this.unlocked100x100 && this.bestScore >= BONUS_100X100_TARGET) {
+      this.unlocked100x100 = true;
+      localStorage.setItem(this.getUnlocked100x100Key(), 'true');
+      this.updateSizeButtonsUI(100);
+      this.showToast('🎉 MEGA 100×100 Grid Unlocked!');
+      unlockedAny = true;
     }
     return unlockedAny;
   }
@@ -1095,13 +1127,15 @@ class Game8192 {
     this.unlocked3x3 = false;
     this.unlocked2x2 = false;
     this.unlock2x2Armed = false;
+    this.unlocked100x100 = false;
     localStorage.setItem(this.getMaxUnlockedKey(), '4');
     localStorage.setItem(this.getUnlocked3x3Key(), 'false');
     localStorage.setItem(this.getUnlocked2x2Key(), 'false');
     localStorage.setItem(this.getArmed2x2Key(), 'false');
+    localStorage.setItem(this.getUnlocked100x100Key(), 'false');
 
-    // Clear saved boards and best blocks so the player can re-unlock 5x5..10x10, 3x3, and 2x2 cleanly
-    for (let s = 2; s <= 10; s++) {
+    // Clear saved boards and best blocks so all progressive & bonus grids reset cleanly
+    for (const s of ALL_GRID_SIZES) {
       localStorage.removeItem(this.getStateKey(s));
       localStorage.removeItem(this.getBestKey(s));
     }
@@ -1127,11 +1161,13 @@ class Game8192 {
       if (isUnlocked) {
         btn.innerHTML = `${btnSize}×${btnSize}`;
         btn.title =
-          btnSize === 2
-            ? 'Play extreme 2×2 grid'
-            : btnSize === 3
-              ? 'Play bonus 3×3 grid'
-              : `Play ${btnSize}×${btnSize} grid`;
+          btnSize === 100
+            ? 'Play mega 100×100 grid'
+            : btnSize === 2
+              ? 'Play extreme 2×2 grid'
+              : btnSize === 3
+                ? 'Play bonus 3×3 grid'
+                : `Play ${btnSize}×${btnSize} grid`;
       } else {
         const { fromSize, requiredTile } = getGridUnlockRequirement(btnSize);
         btn.innerHTML = `${lockSvg}<span>${btnSize}×${btnSize}</span>`;
@@ -1249,14 +1285,26 @@ class Game8192 {
     // Update size selector buttons & board attribute
     this.updateSizeButtonsUI();
     this.boardContainer.setAttribute('data-grid-size', String(this.size));
+    if (this.rootEl && this.rootEl.classList) {
+      this.rootEl.classList.toggle('grid-100-mode', this.size === 100);
+    }
 
-    // Build background empty cells
+    // Build background empty cells (colossal grids like 100x100 render via CSS background grid)
     this.gridBackground.innerHTML = '';
-    const totalCells = this.size * this.size;
-    for (let i = 0; i < totalCells; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'grid-cell';
-      this.gridBackground.appendChild(cell);
+    if (this.size <= 16) {
+      const target =
+        typeof document.createDocumentFragment === 'function'
+          ? document.createDocumentFragment()
+          : this.gridBackground;
+      const totalCells = this.size * this.size;
+      for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        target.appendChild(cell);
+      }
+      if (target !== this.gridBackground) {
+        this.gridBackground.appendChild(target);
+      }
     }
 
     // Load best tile for this grid size
@@ -1321,9 +1369,10 @@ class Game8192 {
   }
 
   saveState() {
-    const serializedGrid = this.grid.map((row) =>
-      row.map((tile) => (tile ? { value: tile.value } : null))
-    );
+    const serializedGrid =
+      this.size > 16
+        ? this.serializeGridValues()
+        : this.grid.map((row) => row.map((tile) => (tile ? { value: tile.value } : null)));
 
     const serializedHistory = this.history.map((snap) => ({
       grid: snap.grid,
@@ -1362,22 +1411,11 @@ class Game8192 {
       const raw = localStorage.getItem(this.getStateKey(this.size));
       if (!raw) return false;
       const data = JSON.parse(raw);
-      if (!data || data.size !== this.size || !Array.isArray(data.grid)) return false;
+      if (!data || data.size !== this.size || !data.grid) return false;
 
-      this.grid = data.grid.map((row, r) =>
-        row.map((cell, c) =>
-          cell
-            ? {
-                id: this.nextTileId++,
-                value: cell.value,
-                row: r,
-                col: c,
-                isNew: false,
-                mergedFrom: null,
-              }
-            : null
-        )
-      );
+      const restoredGrid = this.buildGridFromSerialized(data.grid);
+      if (!restoredGrid) return false;
+      this.grid = restoredGrid;
 
       this.score = Number(data.score) || 0;
       this.undosRemaining =
@@ -1463,7 +1501,65 @@ class Game8192 {
   }
 
   serializeGridValues() {
+    if (this.size > 16) {
+      const tiles = [];
+      for (let r = 0; r < this.size; r++) {
+        for (let c = 0; c < this.size; c++) {
+          const tile = this.grid[r] && this.grid[r][c];
+          if (tile && tile.value > 0) {
+            tiles.push([r, c, tile.value]);
+          }
+        }
+      }
+      return { sparse: true, tiles };
+    }
     return this.grid.map((row) => row.map((tile) => (tile ? tile.value : 0)));
+  }
+
+  buildGridFromSerialized(encoded) {
+    const makeTile = (r, c, value) => ({
+      id: this.nextTileId++,
+      value,
+      row: r,
+      col: c,
+      isNew: false,
+      mergedFrom: null,
+    });
+
+    const restored = Array.from({ length: this.size }, () => Array(this.size).fill(null));
+    if (encoded && encoded.sparse && Array.isArray(encoded.tiles)) {
+      for (const entry of encoded.tiles) {
+        if (!Array.isArray(entry) || entry.length < 3) continue;
+        const [r, c, val] = entry;
+        if (r >= 0 && r < this.size && c >= 0 && c < this.size && val > 0) {
+          restored[r][c] = makeTile(r, c, val);
+        }
+      }
+      return restored;
+    }
+
+    if (!Array.isArray(encoded)) return null;
+    for (let r = 0; r < Math.min(encoded.length, this.size); r++) {
+      const row = encoded[r];
+      if (!Array.isArray(row)) continue;
+      for (let c = 0; c < Math.min(row.length, this.size); c++) {
+        const cell = row[c];
+        const val =
+          typeof cell === 'number' ? cell : cell && typeof cell.value === 'number' ? cell.value : 0;
+        if (val > 0) {
+          restored[r][c] = makeTile(r, c, val);
+        }
+      }
+    }
+    return restored;
+  }
+
+  pushHistorySnapshot(snapshot) {
+    this.history.push(snapshot);
+    const maxHistory = this.size > 16 ? 25 : MAX_HISTORY_LENGTH;
+    while (this.history.length > maxHistory) {
+      this.history.shift();
+    }
   }
 
   move(direction) {
@@ -1584,10 +1680,7 @@ class Game8192 {
     if (!moved) return;
 
     // Record history for Undo
-    this.history.push(preMoveSnapshot);
-    if (this.history.length > MAX_HISTORY_LENGTH) {
-      this.history.shift();
-    }
+    this.pushHistorySnapshot(preMoveSnapshot);
 
     // Update score
     if (scoreDelta > 0) {
@@ -1827,10 +1920,7 @@ class Game8192 {
       won: this.won,
       keepPlaying: this.keepPlaying,
     };
-    this.history.push(preSwapSnapshot);
-    if (this.history.length > MAX_HISTORY_LENGTH) {
-      this.history.shift();
-    }
+    this.pushHistorySnapshot(preSwapSnapshot);
 
     // Clear animation flags before swapping
     for (let row = 0; row < this.size; row++) {
@@ -1885,10 +1975,7 @@ class Game8192 {
       won: this.won,
       keepPlaying: this.keepPlaying,
     };
-    this.history.push(preSmashSnapshot);
-    if (this.history.length > MAX_HISTORY_LENGTH) {
-      this.history.shift();
-    }
+    this.pushHistorySnapshot(preSmashSnapshot);
 
     this.smashesRemaining--;
     this.grid[r][c] = null;
@@ -1927,10 +2014,7 @@ class Game8192 {
       won: this.won,
       keepPlaying: this.keepPlaying,
     };
-    this.history.push(preDoubleSnapshot);
-    if (this.history.length > MAX_HISTORY_LENGTH) {
-      this.history.shift();
-    }
+    this.pushHistorySnapshot(preDoubleSnapshot);
 
     // Clear previous animation flags
     for (let row = 0; row < this.size; row++) {
@@ -2001,20 +2085,10 @@ class Game8192 {
     const prev = this.history.pop();
     this.undosRemaining--;
 
-    this.grid = prev.grid.map((row, r) =>
-      row.map((val, c) =>
-        val > 0
-          ? {
-              id: this.nextTileId++,
-              value: val,
-              row: r,
-              col: c,
-              isNew: false,
-              mergedFrom: null,
-            }
-          : null
-      )
-    );
+    const restoredGrid = this.buildGridFromSerialized(prev.grid);
+    if (restoredGrid) {
+      this.grid = restoredGrid;
+    }
 
     this.score = prev.score;
     // Keep unlockedMilestones intact so undoing and re-merging the same tile doesn't farm extra Undos
@@ -2029,14 +2103,14 @@ class Game8192 {
   }
 
   hasMovesAvailable() {
-    if (this.getEmptyCells().length > 0) return true;
-
     for (let r = 0; r < this.size; r++) {
       for (let c = 0; c < this.size; c++) {
         const current = this.grid[r][c];
-        if (!current) continue;
-        if (r + 1 < this.size && this.grid[r + 1][c].value === current.value) return true;
-        if (c + 1 < this.size && this.grid[r][c + 1].value === current.value) return true;
+        if (!current) return true;
+        const down = r + 1 < this.size ? this.grid[r + 1][c] : undefined;
+        if (down && down.value === current.value) return true;
+        const right = c + 1 < this.size ? this.grid[r][c + 1] : undefined;
+        if (right && right.value === current.value) return true;
       }
     }
     return false;
@@ -2280,11 +2354,13 @@ class Game8192 {
     this.unlocked3x3 = true;
     this.unlocked2x2 = true;
     this.unlock2x2Armed = false;
+    this.unlocked100x100 = true;
     localStorage.setItem(this.getMaxUnlockedKey(), '10');
     localStorage.setItem(this.getUnlocked3x3Key(), 'true');
     localStorage.setItem(this.getUnlocked2x2Key(), 'true');
     localStorage.setItem(this.getArmed2x2Key(), 'false');
-    this.updateSizeButtonsUI([10, 3, 2]);
+    localStorage.setItem(this.getUnlocked100x100Key(), 'true');
+    this.updateSizeButtonsUI([10, 3, 2, 100]);
     this.updateActivate2x2UI();
 
     this.pulseUndoBadge();
@@ -2302,7 +2378,7 @@ class Game8192 {
       games.forEach((g) => g.unlockSecretRewards());
       this.sound.playWinFanfare();
       this.closeSecretModal();
-      this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10 + 3×3 & 2×2) & 100 of every Power-Up!');
+      this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10 + 3×3, 2×2 & 100×100) & 100 of every Power-Up!');
     } else {
       this.showToast('Wrong password!');
       if (this.secretInput) {
@@ -2849,12 +2925,19 @@ document.addEventListener('DOMContentLoaded', () => {
     intervalId: null,
   };
 
-  // Progression rank along 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> bonus 3 (11) -> extreme 2 (12)
-  const getBattleGridRank = (gridSize) => (gridSize === 2 ? 12 : gridSize === 3 ? 11 : gridSize);
+  // Progression rank along 4..10 -> 3 (11) -> 2 (12) -> 100 (13)
+  const getBattleGridRank = (gridSize) =>
+    gridSize === 100 ? 13 : gridSize === 2 ? 12 : gridSize === 3 ? 11 : gridSize;
   const getPlayerProgressRank = (g) =>
-    g.unlocked2x2 ? 12 : g.unlocked3x3 ? 11 : g.maxUnlockedSize;
+    g.unlocked100x100 ? 13 : g.unlocked2x2 ? 12 : g.unlocked3x3 ? 11 : g.maxUnlockedSize;
   const getPlayerHighestGridLabel = (g) =>
-    g.unlocked2x2 ? '2×2' : g.unlocked3x3 ? '3×3' : `${g.maxUnlockedSize}×${g.maxUnlockedSize}`;
+    g.unlocked100x100
+      ? '100×100'
+      : g.unlocked2x2
+        ? '2×2'
+        : g.unlocked3x3
+          ? '3×3'
+          : `${g.maxUnlockedSize}×${g.maxUnlockedSize}`;
 
   const formatClock = (totalSeconds) => {
     const s = Math.max(0, Math.floor(totalSeconds));
