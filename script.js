@@ -1,15 +1,28 @@
 /**
  * 8192 — Slide & Merge Puzzle Game
- * Supports 4x4, 5x5, and 6x6 grids with independent persistence,
- * milestone-earned Undo power-ups, smooth animations, and Web Audio SFX.
+ * Supports 4x4–10x10 progressive grids and bonus 3x3 / extreme 2x2 grids with independent persistence,
+ * milestone-earned power-ups, smooth animations, and Web Audio SFX.
  */
 
 const WIN_TARGET = 8192;
+const BONUS_2X2_TARGET = 16384;
 
 // Tile required on grid size `s` to unlock grid size `s + 1`
-// 4x4 -> 5x5: 128, 5x5 -> 6x6: 256, 6x6 -> 7x7: 512, 7x7 -> 8x8: 1024, 8x8 -> 9x9: 2048, 9x9 -> 10x10: 4096
+// 4x4 -> 5x5: 128, 5x5 -> 6x6: 256, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 10x10 (Armed) -> 2x2: 16384
 function getUnlockTargetForSize(size) {
   return 128 * Math.pow(2, size - 4);
+}
+
+/** Returns { fromSize, requiredTile } needed to unlock `targetSize`. */
+function getGridUnlockRequirement(targetSize) {
+  if (targetSize === 2) {
+    return { fromSize: 10, requiredTile: BONUS_2X2_TARGET };
+  }
+  if (targetSize === 3) {
+    return { fromSize: 10, requiredTile: WIN_TARGET };
+  }
+  const fromSize = targetSize - 1;
+  return { fromSize, requiredTile: getUnlockTargetForSize(fromSize) };
 }
 const INITIAL_UNDOS = 3;
 const MAX_UNDOS = 5;
@@ -52,6 +65,9 @@ const STORAGE_KEYS = {
   STATE_PREFIX: 'game_8192_state_v1_',
   BEST_PREFIX: 'game_8192_best_tile_v1_',
   MAX_UNLOCKED_SIZE: 'game_8192_max_unlocked_size_v1',
+  UNLOCKED_3X3: 'game_8192_unlocked_3x3_v1',
+  UNLOCKED_2X2: 'game_8192_unlocked_2x2_v1',
+  ARMED_2X2: 'game_8192_armed_2x2_v1',
   THEME: 'game_8192_theme_v1',
   SOUND: 'game_8192_sound_v1',
   MUSIC: 'game_8192_music_v1',
@@ -869,14 +885,18 @@ class Game8192 {
     this.tryAgainBtn = q('try-again-btn', 'try-again-btn');
 
     this.sizeButtons = Array.from(this.rootEl.querySelectorAll('.size-btn'));
+    this.activate2x2Btn = q('activate-2x2-btn', 'activate-2x2-btn');
+    this.activate2x2LabelEl = q('activate-2x2-label', 'activate-2x2-label');
     this.resetUnlocksBtn = q('reset-unlocks-btn', 'reset-unlocks-btn');
 
     // Internal State
     this.nextTileId = 1;
     this.maxUnlockedSize = this.computeMaxUnlockedSize();
+    this.unlocked3x3 = this.computeUnlocked3x3();
+    this.unlocked2x2 = this.computeUnlocked2x2();
+    this.unlock2x2Armed = !this.unlocked2x2 && this.computeUnlock2x2Armed();
     const savedSize = parseInt(localStorage.getItem(this.getActiveSizeKey()), 10);
-    this.size =
-      savedSize >= 4 && savedSize <= 10 && savedSize <= this.maxUnlockedSize ? savedSize : 4;
+    this.size = this.isGridSizeUnlocked(savedSize) ? savedSize : 4;
 
     this.grid = [];
     this.score = 0;
@@ -901,6 +921,7 @@ class Game8192 {
     this.updateSoundUI();
     this.updateMusicUI();
     this.updateSizeButtonsUI();
+    this.updateActivate2x2UI();
     this.bindEvents();
     this.switchGridSize(this.size, false);
   }
@@ -915,6 +936,18 @@ class Game8192 {
 
   getMaxUnlockedKey() {
     return `${STORAGE_KEYS.MAX_UNLOCKED_SIZE}${this.storageSuffix}`;
+  }
+
+  getUnlocked3x3Key() {
+    return `${STORAGE_KEYS.UNLOCKED_3X3}${this.storageSuffix}`;
+  }
+
+  getUnlocked2x2Key() {
+    return `${STORAGE_KEYS.UNLOCKED_2X2}${this.storageSuffix}`;
+  }
+
+  getArmed2x2Key() {
+    return `${STORAGE_KEYS.ARMED_2X2}${this.storageSuffix}`;
   }
 
   getActiveSizeKey() {
@@ -942,12 +975,133 @@ class Game8192 {
     return unlocked;
   }
 
-  resetGridUnlocks() {
-    this.maxUnlockedSize = 4;
-    localStorage.setItem(this.getMaxUnlockedKey(), '4');
+  computeUnlocked3x3() {
+    const saved = localStorage.getItem(this.getUnlocked3x3Key());
+    if (saved !== null) {
+      return saved === 'true';
+    }
+    const bestOn10 = parseInt(localStorage.getItem(this.getBestKey(10)), 10) || 0;
+    const unlocked = this.maxUnlockedSize >= 10 && bestOn10 >= WIN_TARGET;
+    localStorage.setItem(this.getUnlocked3x3Key(), unlocked ? 'true' : 'false');
+    return unlocked;
+  }
 
-    // Clear saved boards and best blocks so the player can re-unlock 5x5..10x10 cleanly
-    for (let s = 4; s <= 10; s++) {
+  computeUnlocked2x2() {
+    // 2x2 is never unlocked retroactively from prior 16384 runs; only explicit unlock saves persist it
+    return localStorage.getItem(this.getUnlocked2x2Key()) === 'true';
+  }
+
+  computeUnlock2x2Armed() {
+    return localStorage.getItem(this.getArmed2x2Key()) === 'true';
+  }
+
+  isGridSizeUnlocked(size) {
+    if (size === 2) {
+      return Boolean(this.unlocked2x2);
+    }
+    if (size === 3) {
+      return Boolean(this.unlocked3x3);
+    }
+    return Number.isInteger(size) && size >= 4 && size <= this.maxUnlockedSize;
+  }
+
+  /** Checks whether current progress unlocks the next grid, bonus 3x3, or armed 2x2 challenge. */
+  checkGridUnlock(createdTileValue = 0) {
+    let unlockedAny = false;
+    if (this.size >= 4 && this.size < 10 && this.maxUnlockedSize === this.size) {
+      const unlockRequirement = getUnlockTargetForSize(this.size);
+      if (this.bestScore >= unlockRequirement) {
+        this.maxUnlockedSize = this.size + 1;
+        localStorage.setItem(this.getMaxUnlockedKey(), String(this.maxUnlockedSize));
+        this.updateSizeButtonsUI(this.maxUnlockedSize);
+        this.showToast(`🎉 ${this.maxUnlockedSize}×${this.maxUnlockedSize} Grid Unlocked!`);
+        unlockedAny = true;
+      }
+    } else if (this.size === 10) {
+      const newlyUnlocked = [];
+      if (!this.unlocked3x3 && this.bestScore >= WIN_TARGET) {
+        this.unlocked3x3 = true;
+        localStorage.setItem(this.getUnlocked3x3Key(), 'true');
+        newlyUnlocked.push(3);
+        this.showToast('🎉 Bonus 3×3 Grid Unlocked!');
+        unlockedAny = true;
+      }
+      // 2x2 requires the Activate 2x2 button to be armed BEFORE newly creating 16384 on 10x10
+      if (!this.unlocked2x2 && this.unlock2x2Armed && createdTileValue >= BONUS_2X2_TARGET) {
+        this.unlocked2x2 = true;
+        this.unlock2x2Armed = false;
+        localStorage.setItem(this.getUnlocked2x2Key(), 'true');
+        localStorage.setItem(this.getArmed2x2Key(), 'false');
+        newlyUnlocked.push(2);
+        this.updateActivate2x2UI();
+        this.showToast('🎉 EXTREME 2×2 Grid Unlocked!');
+        unlockedAny = true;
+      }
+      if (newlyUnlocked.length > 0) {
+        this.updateSizeButtonsUI(newlyUnlocked);
+      }
+    }
+    return unlockedAny;
+  }
+
+  toggleActivate2x2() {
+    if (this.unlocked2x2) {
+      if (this.size !== 2) {
+        this.switchGridSize(2, true);
+      } else {
+        this.showToast('2×2 Grid is already unlocked!');
+      }
+      return;
+    }
+
+    this.unlock2x2Armed = !this.unlock2x2Armed;
+    localStorage.setItem(this.getArmed2x2Key(), this.unlock2x2Armed ? 'true' : 'false');
+    this.updateActivate2x2UI();
+    this.updateSizeButtonsUI();
+
+    if (this.unlock2x2Armed) {
+      this.sound.playMilestone();
+      this.showToast('⚡ 2×2 Challenge Activated! Now get a 16384 tile on 10×10 to unlock 2×2!');
+    } else {
+      this.showToast('2×2 Challenge deactivated.');
+    }
+  }
+
+  updateActivate2x2UI() {
+    if (!this.activate2x2Btn) return;
+    this.activate2x2Btn.classList.toggle('unlocked', Boolean(this.unlocked2x2));
+    this.activate2x2Btn.classList.toggle('armed', !this.unlocked2x2 && Boolean(this.unlock2x2Armed));
+    this.activate2x2Btn.setAttribute(
+      'aria-pressed',
+      this.unlocked2x2 || this.unlock2x2Armed ? 'true' : 'false'
+    );
+
+    if (this.unlocked2x2) {
+      if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = '2×2 Unlocked';
+      this.activate2x2Btn.title = 'Extreme 2×2 Grid unlocked! Click to play 2×2.';
+    } else if (this.unlock2x2Armed) {
+      if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = '2×2 Armed';
+      this.activate2x2Btn.title =
+        'Activated! Get a 16384 tile on 10×10 to unlock 2×2 (click to deactivate).';
+    } else {
+      if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = 'Activate 2×2';
+      this.activate2x2Btn.title =
+        'Press to activate first, then get a 16384 tile on 10×10 to unlock 2×2!';
+    }
+  }
+
+  resetGridUnlocks(silent = false) {
+    this.maxUnlockedSize = 4;
+    this.unlocked3x3 = false;
+    this.unlocked2x2 = false;
+    this.unlock2x2Armed = false;
+    localStorage.setItem(this.getMaxUnlockedKey(), '4');
+    localStorage.setItem(this.getUnlocked3x3Key(), 'false');
+    localStorage.setItem(this.getUnlocked2x2Key(), 'false');
+    localStorage.setItem(this.getArmed2x2Key(), 'false');
+
+    // Clear saved boards and best blocks so the player can re-unlock 5x5..10x10, 3x3, and 2x2 cleanly
+    for (let s = 2; s <= 10; s++) {
       localStorage.removeItem(this.getStateKey(s));
       localStorage.removeItem(this.getBestKey(s));
     }
@@ -956,25 +1110,40 @@ class Game8192 {
     this.switchGridSize(4, false);
     this.startNewGame();
     this.updateSizeButtonsUI();
-    this.showToast('Grid unlocks reset back to 4×4!');
+    this.updateActivate2x2UI();
+    if (!silent) {
+      this.showToast('Grid unlocks reset back to 4×4!');
+    }
   }
 
   updateSizeButtonsUI(newlyUnlockedSize = null) {
     const lockSvg = `<svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+    const unlockedList = Array.isArray(newlyUnlockedSize) ? newlyUnlockedSize : [newlyUnlockedSize];
     this.sizeButtons.forEach((btn) => {
       const btnSize = parseInt(btn.getAttribute('data-size'), 10);
-      const isUnlocked = btnSize <= this.maxUnlockedSize;
+      const isUnlocked = this.isGridSizeUnlocked(btnSize);
       btn.classList.toggle('active', btnSize === this.size);
       btn.classList.toggle('locked', !isUnlocked);
       if (isUnlocked) {
         btn.innerHTML = `${btnSize}×${btnSize}`;
-        btn.title = `Play ${btnSize}×${btnSize} grid`;
+        btn.title =
+          btnSize === 2
+            ? 'Play extreme 2×2 grid'
+            : btnSize === 3
+              ? 'Play bonus 3×3 grid'
+              : `Play ${btnSize}×${btnSize} grid`;
       } else {
-        const requiredTile = getUnlockTargetForSize(btnSize - 1);
+        const { fromSize, requiredTile } = getGridUnlockRequirement(btnSize);
         btn.innerHTML = `${lockSvg}<span>${btnSize}×${btnSize}</span>`;
-        btn.title = `Locked — Reach the ${requiredTile} tile on ${btnSize - 1}×${btnSize - 1} to unlock!`;
+        if (btnSize === 2) {
+          btn.title = this.unlock2x2Armed
+            ? `Armed! Reach the ${requiredTile} tile on ${fromSize}×${fromSize} to unlock!`
+            : `Locked — Press "Activate 2×2" first, then reach ${requiredTile} on ${fromSize}×${fromSize}!`;
+        } else {
+          btn.title = `Locked — Reach the ${requiredTile} tile on ${fromSize}×${fromSize} to unlock!`;
+        }
       }
-      if (newlyUnlockedSize === btnSize) {
+      if (unlockedList.includes(btnSize)) {
         btn.classList.remove('newly-unlocked');
         void btn.offsetWidth;
         btn.classList.add('newly-unlocked');
@@ -1051,11 +1220,19 @@ class Game8192 {
      Grid Setup & State Persistence per Size
      ------------------------------------------------------------------------ */
   switchGridSize(newSize, saveCurrentFirst = true) {
-    if (newSize > this.maxUnlockedSize) {
-      const requiredTile = getUnlockTargetForSize(newSize - 1);
-      this.showToast(
-        `Locked! Get a ${requiredTile} tile on ${newSize - 1}×${newSize - 1} to unlock ${newSize}×${newSize}!`
-      );
+    if (!this.isGridSizeUnlocked(newSize)) {
+      const { fromSize, requiredTile } = getGridUnlockRequirement(newSize);
+      if (newSize === 2) {
+        this.showToast(
+          this.unlock2x2Armed
+            ? `Armed! Get a ${requiredTile} tile on ${fromSize}×${fromSize} to unlock 2×2!`
+            : `Locked! Press "Activate 2×2" first, then get a ${requiredTile} tile on ${fromSize}×${fromSize}!`
+        );
+      } else {
+        this.showToast(
+          `Locked! Get a ${requiredTile} tile on ${fromSize}×${fromSize} to unlock ${newSize}×${newSize}!`
+        );
+      }
       return;
     }
 
@@ -1483,18 +1660,9 @@ class Game8192 {
     }
     this.updateBestFromGrid();
 
-    // Check if reaching the target tile on this grid unlocks the next grid size
-    const unlockRequirement = getUnlockTargetForSize(this.size);
-    if (
-      this.bestScore >= unlockRequirement &&
-      this.size < 10 &&
-      this.maxUnlockedSize === this.size
-    ) {
-      this.maxUnlockedSize = this.size + 1;
-      localStorage.setItem(this.getMaxUnlockedKey(), String(this.maxUnlockedSize));
-      this.updateSizeButtonsUI(this.maxUnlockedSize);
+    // Check if reaching the target tile on this grid unlocks the next grid size (or bonus 3x3 / armed 2x2)
+    if (this.checkGridUnlock(maxMergedValue)) {
       earnedPowerup = true;
-      this.showToast(`🎉 ${this.maxUnlockedSize}×${this.maxUnlockedSize} Grid Unlocked!`);
     }
 
     // Check Game Over
@@ -1800,17 +1968,8 @@ class Game8192 {
 
     this.updateBestFromGrid();
 
-    const unlockRequirement = getUnlockTargetForSize(this.size);
-    if (
-      this.bestScore >= unlockRequirement &&
-      this.size < 10 &&
-      this.maxUnlockedSize === this.size
-    ) {
-      this.maxUnlockedSize = this.size + 1;
-      localStorage.setItem(this.getMaxUnlockedKey(), String(this.maxUnlockedSize));
-      this.updateSizeButtonsUI(this.maxUnlockedSize);
+    if (this.checkGridUnlock(newVal)) {
       unlockedNewGrid = true;
-      this.showToast(`🎉 ${this.maxUnlockedSize}×${this.maxUnlockedSize} Grid Unlocked!`);
     }
 
     if (justWon) {
@@ -2118,8 +2277,15 @@ class Game8192 {
     this.doublesRemaining = SECRET_POWERUP_AMOUNT;
 
     this.maxUnlockedSize = 10;
+    this.unlocked3x3 = true;
+    this.unlocked2x2 = true;
+    this.unlock2x2Armed = false;
     localStorage.setItem(this.getMaxUnlockedKey(), '10');
-    this.updateSizeButtonsUI(10);
+    localStorage.setItem(this.getUnlocked3x3Key(), 'true');
+    localStorage.setItem(this.getUnlocked2x2Key(), 'true');
+    localStorage.setItem(this.getArmed2x2Key(), 'false');
+    this.updateSizeButtonsUI([10, 3, 2]);
+    this.updateActivate2x2UI();
 
     this.pulseUndoBadge();
     this.pulseSmashBadge();
@@ -2136,7 +2302,7 @@ class Game8192 {
       games.forEach((g) => g.unlockSecretRewards());
       this.sound.playWinFanfare();
       this.closeSecretModal();
-      this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10) & 100 of every Power-Up!');
+      this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10 + 3×3 & 2×2) & 100 of every Power-Up!');
     } else {
       this.showToast('Wrong password!');
       if (this.secretInput) {
@@ -2158,6 +2324,12 @@ class Game8192 {
         }
       });
     });
+
+    if (this.activate2x2Btn) {
+      this.activate2x2Btn.addEventListener('click', () => {
+        this.toggleActivate2x2();
+      });
+    }
 
     if (this.resetUnlocksBtn) {
       this.resetUnlocksBtn.addEventListener('click', () => {
@@ -2671,11 +2843,18 @@ document.addEventListener('DOMContentLoaded', () => {
     type: 'timer', // 'timer' (Highest Number Timed) | 'race10' (Race to a Grid)
     players: 2,
     durationSec: 120,
-    targetGrid: 10, // Target grid size for race mode (5..10)
+    targetGrid: 10, // Target grid size for race mode (5..10 or bonus 3)
     remainingSec: 120,
     elapsedSec: 0,
     intervalId: null,
   };
+
+  // Progression rank along 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> bonus 3 (11) -> extreme 2 (12)
+  const getBattleGridRank = (gridSize) => (gridSize === 2 ? 12 : gridSize === 3 ? 11 : gridSize);
+  const getPlayerProgressRank = (g) =>
+    g.unlocked2x2 ? 12 : g.unlocked3x3 ? 11 : g.maxUnlockedSize;
+  const getPlayerHighestGridLabel = (g) =>
+    g.unlocked2x2 ? '2×2' : g.unlocked3x3 ? '3×3' : `${g.maxUnlockedSize}×${g.maxUnlockedSize}`;
 
   const formatClock = (totalSeconds) => {
     const s = Math.max(0, Math.floor(totalSeconds));
@@ -2686,12 +2865,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const buildTargetGridHint = (targetSize) => {
     const steps = [];
-    for (let s = 4; s <= targetSize; s++) {
+    const maxStep = targetSize === 3 ? 10 : targetSize;
+    for (let s = 4; s <= maxStep; s++) {
       steps.push(`${s}×${s}`);
     }
-    const prevSize = targetSize - 1;
-    const finalReq = getUnlockTargetForSize(prevSize);
-    return `Path: ${steps.join(' → ')} (reach ${finalReq} on ${prevSize}×${prevSize})`;
+    if (targetSize === 3) {
+      steps.push('3×3');
+    }
+    const { fromSize, requiredTile } = getGridUnlockRequirement(targetSize);
+    return `Path: ${steps.join(' → ')} (reach ${requiredTile} on ${fromSize}×${fromSize})`;
   };
 
   const syncBattleModalUI = () => {
@@ -2733,12 +2915,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const comparePlayersForBattle = (a, b) => {
     if (battleState.type === 'race10') {
-      // Rank by highest unlocked grid size, then current grid size, then highest tile on board, then score
-      if (b.maxUnlockedSize !== a.maxUnlockedSize) {
-        return b.maxUnlockedSize - a.maxUnlockedSize;
+      // Rank by highest unlocked grid progression (4..10 -> 3x3), active board rank, highest tile, then score
+      const rankDiff = getPlayerProgressRank(b) - getPlayerProgressRank(a);
+      if (rankDiff !== 0) {
+        return rankDiff;
       }
-      if (b.size !== a.size) {
-        return b.size - a.size;
+      const sizeDiff = getBattleGridRank(b.size) - getBattleGridRank(a.size);
+      if (sizeDiff !== 0) {
+        return sizeDiff;
       }
       const maxA = a.getHighestTileOnBoard();
       const maxB = b.getHighestTileOnBoard();
@@ -2775,7 +2959,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const highestTile = Math.max(g.getHighestTileOnBoard(), g.bestScore);
           const statText =
             battleState.type === 'race10'
-              ? `${g.maxUnlockedSize}×${g.maxUnlockedSize} • Tile ${highestTile}`
+              ? `${getPlayerHighestGridLabel(g)} • Tile ${highestTile}`
               : `Tile ${highestTile} (${g.score.toLocaleString()} pts)`;
           return `<div class="battle-player-chip ${isLeader ? 'leader' : ''}" data-player="${g.playerIndex}">
             <span class="battle-chip-tag">P${g.playerIndex}</span>
@@ -2831,7 +3015,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (reasonText) {
         battleWinnerSub.textContent = reasonText;
       } else if (battleState.type === 'race10') {
-        battleWinnerSub.textContent = `Reached the ${winner.maxUnlockedSize}×${winner.maxUnlockedSize} grid in ${formatClock(battleState.elapsedSec)}!`;
+        battleWinnerSub.textContent = `Reached the ${getPlayerHighestGridLabel(winner)} grid in ${formatClock(battleState.elapsedSec)}!`;
       } else {
         battleWinnerSub.textContent = `Highest Tile: ${winnerTile} • Score: ${winner.score.toLocaleString()} pts`;
       }
@@ -2849,7 +3033,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span>Player ${g.playerIndex}</span>
             </div>
             <div class="battle-score-stats">
-              <span>Grid: <strong>${g.maxUnlockedSize}×${g.maxUnlockedSize}</strong></span>
+              <span>Grid: <strong>${getPlayerHighestGridLabel(g)}</strong></span>
               <span>Best Tile: <strong>${highestTile}</strong></span>
               <span>Score: <strong>${g.score.toLocaleString()}</strong></span>
             </div>
@@ -2902,17 +3086,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const participants = getActiveBattleGames();
     participants.forEach((g) => {
       if (battleState.type === 'race10') {
-        // Reset everyone to 4x4 so it's a fair race to unlock & reach target grid!
-        g.maxUnlockedSize = 4;
-        localStorage.setItem(g.getMaxUnlockedKey(), '4');
-        for (let s = 4; s <= 10; s++) {
-          localStorage.removeItem(g.getStateKey(s));
-          localStorage.removeItem(g.getBestKey(s));
-        }
-        g.bestScore = 0;
-        g.switchGridSize(4, false);
-        g.startNewGame();
-        g.updateSizeButtonsUI();
+        // Reset everyone to 4x4 (and clear 3x3/2x2 unlocks & armed state) for a fair race!
+        g.resetGridUnlocks(true);
       } else {
         // Highest Number Timed Battle: start a fresh game on the same starting 4x4 grid with fresh bestScore for the match
         g.bestScore = 0;
@@ -2981,8 +3156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check instant win condition in Grid Race mode
     if (
       battleState.type === 'race10' &&
-      (updatedGame.maxUnlockedSize >= battleState.targetGrid ||
-        updatedGame.size >= battleState.targetGrid)
+      getPlayerProgressRank(updatedGame) >= getBattleGridRank(battleState.targetGrid)
     ) {
       finishBattle(
         `🏁 Player ${updatedGame.playerIndex} unlocked the ${battleState.targetGrid}×${battleState.targetGrid} grid first in ${formatClock(battleState.elapsedSec)}!`
@@ -3025,7 +3199,7 @@ document.addEventListener('DOMContentLoaded', () => {
   Array.from(document.querySelectorAll('[data-battle-target-grid]')).forEach((btn) => {
     btn.addEventListener('click', () => {
       const chosen = Number(btn.getAttribute('data-battle-target-grid')) || 10;
-      battleState.targetGrid = Math.max(5, Math.min(10, chosen));
+      battleState.targetGrid = chosen === 3 ? 3 : Math.max(5, Math.min(10, chosen));
       syncBattleModalUI();
     });
   });
