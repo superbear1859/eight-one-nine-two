@@ -394,7 +394,7 @@
       </header>
 
       <form class="secret-modal-body" id="secret-form">
-        <label for="secret-input" class="secret-label">Enter secret code to unlock hidden power-ups:</label>
+        <label for="secret-input" class="secret-label">Enter secret code to unlock hidden rewards:</label>
         <div class="secret-input-row">
           <input
             type="password"
@@ -407,6 +407,25 @@
           <button type="submit" class="action-btn new-game-btn secret-submit-btn">Unlock</button>
         </div>
       </form>
+
+      <!-- Secret Reward Selection (shown after correct passcode) -->
+      <div class="secret-choice-view hidden" id="secret-choice-view">
+        <p class="secret-choice-subtitle">Passcode accepted! Choose your reward:</p>
+        <div class="secret-choice-list">
+          <button type="button" class="secret-choice-btn" data-secret-choice="grids">
+            <strong>🗺️ Just All Grids</strong>
+            <span>Unlock 4×4 up to 10×10 + bonus 3×3, 2×2 &amp; 100×100</span>
+          </button>
+          <button type="button" class="secret-choice-btn" data-secret-choice="powerups">
+            <strong>⚡ Just All Power-Ups</strong>
+            <span>100 Undos, Smashes, Swaps &amp; Doubles</span>
+          </button>
+          <button type="button" class="secret-choice-btn secret-choice-btn-both" data-secret-choice="both">
+            <strong>🌟 Both (Grids &amp; Power-Ups)</strong>
+            <span>All grid sizes + 100 of every power-up</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

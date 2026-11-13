@@ -877,6 +877,7 @@ class Game8192 {
     this.secretCloseBtn = document.getElementById('secret-close-btn');
     this.secretForm = document.getElementById('secret-form');
     this.secretInput = document.getElementById('secret-input');
+    this.secretChoiceView = document.getElementById('secret-choice-view');
     this.toastContainer = q('toast-container', 'toast-container');
 
     // Overlay Elements
@@ -2328,6 +2329,16 @@ class Game8192 {
     this.setSwapMode(false);
     this.setDoubleMode(false);
     this.secretModal.classList.remove('hidden');
+    if (this.secretForm) {
+      this.secretForm.classList.remove('hidden');
+    }
+    if (this.secretChoiceView) {
+      this.secretChoiceView.classList.add('hidden');
+    }
+    const titleEl = document.getElementById('secret-modal-title');
+    if (titleEl) {
+      titleEl.textContent = 'Secret Password';
+    }
     if (this.secretInput) {
       this.secretInput.value = '';
       setTimeout(() => this.secretInput.focus(), 20);
@@ -2337,53 +2348,104 @@ class Game8192 {
   closeSecretModal() {
     if (!this.secretModal) return;
     this.secretModal.classList.add('hidden');
+    if (this.secretForm) {
+      this.secretForm.classList.remove('hidden');
+    }
+    if (this.secretChoiceView) {
+      this.secretChoiceView.classList.add('hidden');
+    }
+    const titleEl = document.getElementById('secret-modal-title');
+    if (titleEl) {
+      titleEl.textContent = 'Secret Password';
+    }
     if (this.secretInput) {
       this.secretInput.value = '';
       this.secretInput.blur();
     }
   }
 
-  unlockSecretRewards() {
-    this.powerupCapBroken = true;
-    this.undosRemaining = SECRET_POWERUP_AMOUNT;
-    this.smashesRemaining = SECRET_POWERUP_AMOUNT;
-    this.swapsRemaining = SECRET_POWERUP_AMOUNT;
-    this.doublesRemaining = SECRET_POWERUP_AMOUNT;
+  showSecretChoiceView() {
+    if (this.secretForm) {
+      this.secretForm.classList.add('hidden');
+    }
+    if (this.secretChoiceView) {
+      this.secretChoiceView.classList.remove('hidden');
+      const bothBtn = this.secretChoiceView.querySelector('[data-secret-choice="both"]');
+      if (bothBtn) {
+        setTimeout(() => bothBtn.focus(), 20);
+      }
+    }
+    const titleEl = document.getElementById('secret-modal-title');
+    if (titleEl) {
+      titleEl.textContent = 'Choose Rewards';
+    }
+  }
 
-    this.maxUnlockedSize = 10;
-    this.unlocked3x3 = true;
-    this.unlocked2x2 = true;
-    this.unlock2x2Armed = false;
-    this.unlocked100x100 = true;
-    localStorage.setItem(this.getMaxUnlockedKey(), '10');
-    localStorage.setItem(this.getUnlocked3x3Key(), 'true');
-    localStorage.setItem(this.getUnlocked2x2Key(), 'true');
-    localStorage.setItem(this.getArmed2x2Key(), 'false');
-    localStorage.setItem(this.getUnlocked100x100Key(), 'true');
-    this.updateSizeButtonsUI([10, 3, 2, 100]);
-    this.updateActivate2x2UI();
+  applySecretChoice(choice = 'both') {
+    const games = Array.isArray(window.games8192) && window.games8192.length > 0 ? window.games8192 : [this];
+    games.forEach((g) => g.unlockSecretRewards(choice));
+    this.sound.playWinFanfare();
+    this.closeSecretModal();
+    if (choice === 'grids') {
+      this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10 + 3×3, 2×2 & 100×100) unlocked!');
+    } else if (choice === 'powerups') {
+      this.showToast('🐻 SUPERBEAR UNLOCKED! 100 of every Power-Up (Undo, Smash, Swap & Double)!');
+    } else {
+      this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10 + 3×3, 2×2 & 100×100) & 100 of every Power-Up!');
+    }
+  }
 
-    this.pulseUndoBadge();
-    this.pulseSmashBadge();
-    this.pulseSwapBadge();
-    this.pulseDoubleBadge();
+  unlockSecretRewards(choice = 'both') {
+    if (choice === 'grids' || choice === 'both') {
+      this.maxUnlockedSize = 10;
+      this.unlocked3x3 = true;
+      this.unlocked2x2 = true;
+      this.unlock2x2Armed = false;
+      this.unlocked100x100 = true;
+      localStorage.setItem(this.getMaxUnlockedKey(), '10');
+      localStorage.setItem(this.getUnlocked3x3Key(), 'true');
+      localStorage.setItem(this.getUnlocked2x2Key(), 'true');
+      localStorage.setItem(this.getArmed2x2Key(), 'false');
+      localStorage.setItem(this.getUnlocked100x100Key(), 'true');
+      this.updateSizeButtonsUI([10, 3, 2, 100]);
+      this.updateActivate2x2UI();
+    }
+
+    if (choice === 'powerups' || choice === 'both') {
+      this.powerupCapBroken = true;
+      this.undosRemaining = SECRET_POWERUP_AMOUNT;
+      this.smashesRemaining = SECRET_POWERUP_AMOUNT;
+      this.swapsRemaining = SECRET_POWERUP_AMOUNT;
+      this.doublesRemaining = SECRET_POWERUP_AMOUNT;
+      this.pulseUndoBadge();
+      this.pulseSmashBadge();
+      this.pulseSwapBadge();
+      this.pulseDoubleBadge();
+    }
+
     this.saveState();
     this.updateUI();
   }
 
-  handleSecretPassword(rawPassword) {
+  handleSecretPassword(rawPassword, choice = null) {
     const cleaned = String(rawPassword || '').trim().toLowerCase();
     if (cleaned === SECRET_PASSWORD) {
-      const games = Array.isArray(window.games8192) && window.games8192.length > 0 ? window.games8192 : [this];
-      games.forEach((g) => g.unlockSecretRewards());
-      this.sound.playWinFanfare();
-      this.closeSecretModal();
-      this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10 + 3×3, 2×2 & 100×100) & 100 of every Power-Up!');
+      if (choice) {
+        this.applySecretChoice(choice);
+        return true;
+      }
+      if (this.secretChoiceView) {
+        this.showSecretChoiceView();
+      } else {
+        this.applySecretChoice('both');
+      }
+      return true;
     } else {
       this.showToast('Wrong password!');
       if (this.secretInput) {
         this.secretInput.select();
       }
+      return false;
     }
   }
 
@@ -2562,6 +2624,16 @@ class Game8192 {
           e.preventDefault();
           const targetGame = window.activeSecretTargetGame || this;
           targetGame.handleSecretPassword(this.secretInput ? this.secretInput.value : '');
+        });
+      }
+      if (this.secretModal) {
+        this.secretModal.querySelectorAll('[data-secret-choice]').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const choice = btn.getAttribute('data-secret-choice') || 'both';
+            const targetGame = window.activeSecretTargetGame || this;
+            targetGame.applySecretChoice(choice);
+          });
         });
       }
 
