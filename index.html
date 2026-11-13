@@ -236,9 +236,24 @@
 
     <!-- Main Game Board -->
     <main class="board-wrapper">
+      <div class="grid-100-hud hidden" id="grid-100-hud" data-role="grid-100-hud">
+        <span class="grid-100-hud-badge">100×100</span>
+        <span class="grid-100-hud-text" id="grid-100-hud-text" data-role="grid-100-hud-text">Hover any tile to identify it</span>
+      </div>
       <div class="board-container" id="board-container" data-role="board-container" data-grid-size="4">
         <div class="grid-background" id="grid-background" data-role="grid-background"></div>
         <div class="tile-container" id="tile-container" data-role="tile-container"></div>
+
+        <!-- 100×100 Hover Identifier Reticle & Tooltip -->
+        <div class="grid-100-reticle hidden" id="grid-100-reticle" data-role="grid-100-reticle"></div>
+        <div class="grid-100-tooltip hidden" id="grid-100-tooltip" data-role="grid-100-tooltip">
+          <div class="grid-100-tooltip-chip" data-role="grid-100-tooltip-chip"></div>
+          <div class="grid-100-tooltip-details">
+            <div class="grid-100-tooltip-title" data-role="grid-100-tooltip-title">Tile 2048</div>
+            <div class="grid-100-tooltip-sub" data-role="grid-100-tooltip-sub">Row 45, Col 23</div>
+            <div class="grid-100-tooltip-action hidden" data-role="grid-100-tooltip-action"></div>
+          </div>
+        </div>
 
         <!-- Overlay for Win / Game Over -->
         <div class="game-overlay hidden" id="game-overlay" data-role="game-overlay">
@@ -459,7 +474,7 @@
             </button>
             <button type="button" class="battle-mode-option" data-battle-type="race10">
               <div class="battle-option-title">🏁 Race to a Grid</div>
-              <div class="battle-option-desc">Everyone starts on a fresh 4×4 grid! First player to unlock your chosen target grid (5×5–10×10 or 3×3) wins!</div>
+              <div class="battle-option-desc">Everyone starts on a fresh 4×4 grid! First player to unlock your chosen target grid (5×5–10×10, 3×3, 2×2, or 100×100) wins!</div>
             </button>
           </div>
         </div>
@@ -493,6 +508,8 @@
             <button type="button" class="battle-pill-btn" data-battle-target-grid="9">9×9</button>
             <button type="button" class="battle-pill-btn active" data-battle-target-grid="10">10×10</button>
             <button type="button" class="battle-pill-btn" data-battle-target-grid="3">3×3</button>
+            <button type="button" class="battle-pill-btn" data-battle-target-grid="2">2×2</button>
+            <button type="button" class="battle-pill-btn" data-battle-target-grid="100">100×100</button>
           </div>
           <p class="battle-target-hint" id="battle-target-hint">Path: 4×4 → 5×5 → 6×6 → 7×7 → 8×8 → 9×9 → 10×10 (reach 4096 on 9×9)</p>
         </div>

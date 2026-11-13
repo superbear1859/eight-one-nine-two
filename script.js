@@ -896,6 +896,18 @@ class Game8192 {
     this.activate2x2LabelEl = q('activate-2x2-label', 'activate-2x2-label');
     this.resetUnlocksBtn = q('reset-unlocks-btn', 'reset-unlocks-btn');
 
+    // 100×100 Hover Identifier Elements
+    this.grid100Hud = q('grid-100-hud', 'grid-100-hud');
+    this.grid100HudText = q('grid-100-hud-text', 'grid-100-hud-text');
+    this.grid100Reticle = q('grid-100-reticle', 'grid-100-reticle');
+    this.grid100Tooltip = q('grid-100-tooltip', 'grid-100-tooltip');
+    this.grid100TooltipChip = q('grid-100-tooltip-chip', 'grid-100-tooltip-chip');
+    this.grid100TooltipTitle = q('grid-100-tooltip-title', 'grid-100-tooltip-title');
+    this.grid100TooltipSub = q('grid-100-tooltip-sub', 'grid-100-tooltip-sub');
+    this.grid100TooltipAction = q('grid-100-tooltip-action', 'grid-100-tooltip-action');
+    this.lastHoverCell = null;
+    this.ensureGrid100HoverElements();
+
     // Internal State
     this.nextTileId = 1;
     this.maxUnlockedSize = this.computeMaxUnlockedSize();
@@ -1289,6 +1301,13 @@ class Game8192 {
     if (this.rootEl && this.rootEl.classList) {
       this.rootEl.classList.toggle('grid-100-mode', this.size === 100);
     }
+    if (this.grid100Hud) {
+      this.grid100Hud.classList.toggle('hidden', this.size !== 100);
+      if (this.grid100HudText) {
+        this.grid100HudText.textContent = 'Hover any tile to identify it';
+      }
+    }
+    this.hideHoverIdentifier();
 
     // Build background empty cells (colossal grids like 100x100 render via CSS background grid)
     this.gridBackground.innerHTML = '';
@@ -1805,6 +1824,9 @@ class Game8192 {
     if (this.smashBtn) {
       this.smashBtn.classList.toggle('active', this.smashMode);
     }
+    if (this.size === 100 && this.lastHoverCell) {
+      this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
+    }
     if (this.smashMode) {
       // Hide game over overlay if player clicked "Smash a Tile" from Game Over screen
       this.overlay.classList.add('hidden');
@@ -1832,6 +1854,9 @@ class Game8192 {
     this.boardContainer.classList.toggle('double-mode', this.doubleMode);
     if (this.doubleBtn) {
       this.doubleBtn.classList.toggle('active', this.doubleMode);
+    }
+    if (this.size === 100 && this.lastHoverCell) {
+      this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
     }
     if (this.doubleMode) {
       this.overlay.classList.add('hidden');
@@ -1868,6 +1893,9 @@ class Game8192 {
     if (this.swapBtn) {
       this.swapBtn.classList.toggle('active', this.swapMode);
     }
+    if (this.size === 100 && this.lastHoverCell) {
+      this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
+    }
     if (this.swapMode) {
       this.overlay.classList.add('hidden');
       this.showToast('Swap Mode: Click the 1st tile to swap!');
@@ -1891,6 +1919,9 @@ class Game8192 {
       if (domEl) {
         domEl.classList.add('swap-selected');
       }
+      if (this.size === 100 && this.lastHoverCell) {
+        this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
+      }
       this.showToast('Now click a 2nd tile to swap positions!');
       return;
     }
@@ -1899,6 +1930,9 @@ class Game8192 {
     if (this.swapFirstTile.r === r && this.swapFirstTile.c === c) {
       this.swapFirstTile = null;
       this.clearSwapSelectionHighlight();
+      if (this.size === 100 && this.lastHoverCell) {
+        this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
+      }
       this.showToast('Selection cleared — click the 1st tile to swap!');
       return;
     }
@@ -2192,6 +2226,212 @@ class Game8192 {
         this.tileContainer.removeChild(child);
       }
     });
+
+    if (this.size === 100 && this.lastHoverCell) {
+      this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     100×100 Hover Tile Identifier & Reticle Tracking
+     ------------------------------------------------------------------------ */
+  ensureGrid100HoverElements() {
+    if (!this.boardContainer) return;
+    if (!this.grid100Reticle && typeof document.createElement === 'function') {
+      this.grid100Reticle = document.createElement('div');
+      this.grid100Reticle.className = 'grid-100-reticle hidden';
+      this.grid100Reticle.setAttribute('data-role', 'grid-100-reticle');
+      this.boardContainer.appendChild(this.grid100Reticle);
+    }
+    if (!this.grid100Tooltip && typeof document.createElement === 'function') {
+      this.grid100Tooltip = document.createElement('div');
+      this.grid100Tooltip.className = 'grid-100-tooltip hidden';
+      this.grid100Tooltip.setAttribute('data-role', 'grid-100-tooltip');
+
+      this.grid100TooltipChip = document.createElement('div');
+      this.grid100TooltipChip.className = 'grid-100-tooltip-chip';
+      this.grid100TooltipChip.setAttribute('data-role', 'grid-100-tooltip-chip');
+
+      const details = document.createElement('div');
+      details.className = 'grid-100-tooltip-details';
+
+      this.grid100TooltipTitle = document.createElement('div');
+      this.grid100TooltipTitle.className = 'grid-100-tooltip-title';
+      this.grid100TooltipTitle.setAttribute('data-role', 'grid-100-tooltip-title');
+
+      this.grid100TooltipSub = document.createElement('div');
+      this.grid100TooltipSub.className = 'grid-100-tooltip-sub';
+      this.grid100TooltipSub.setAttribute('data-role', 'grid-100-tooltip-sub');
+
+      this.grid100TooltipAction = document.createElement('div');
+      this.grid100TooltipAction.className = 'grid-100-tooltip-action hidden';
+      this.grid100TooltipAction.setAttribute('data-role', 'grid-100-tooltip-action');
+
+      details.appendChild(this.grid100TooltipTitle);
+      details.appendChild(this.grid100TooltipSub);
+      details.appendChild(this.grid100TooltipAction);
+
+      this.grid100Tooltip.appendChild(this.grid100TooltipChip);
+      this.grid100Tooltip.appendChild(details);
+      this.boardContainer.appendChild(this.grid100Tooltip);
+    }
+  }
+
+  getCellFromPointer(clientX, clientY) {
+    if (!this.boardContainer) return null;
+    const rect =
+      typeof this.boardContainer.getBoundingClientRect === 'function'
+        ? this.boardContainer.getBoundingClientRect()
+        : { left: 0, top: 0, width: 760, height: 760 };
+
+    if (!rect || !rect.width || !rect.height) return null;
+
+    const pad = 4;
+    const contentWidth = rect.width - pad * 2;
+    const contentHeight = rect.height - pad * 2;
+    if (contentWidth <= 0 || contentHeight <= 0) return null;
+
+    const relX = clientX - rect.left - pad;
+    const relY = clientY - rect.top - pad;
+
+    if (relX < 0 || relX >= contentWidth || relY < 0 || relY >= contentHeight) {
+      return null;
+    }
+
+    const cellWidth = contentWidth / this.size;
+    const cellHeight = contentHeight / this.size;
+    const col = Math.floor(relX / cellWidth);
+    const row = Math.floor(relY / cellHeight);
+
+    return {
+      row: Math.max(0, Math.min(this.size - 1, row)),
+      col: Math.max(0, Math.min(this.size - 1, col)),
+      rect,
+      cellSize: cellWidth,
+    };
+  }
+
+  hideHoverIdentifier() {
+    this.lastHoverCell = null;
+    if (this.grid100Reticle) {
+      this.grid100Reticle.classList.add('hidden');
+    }
+    if (this.grid100Tooltip) {
+      this.grid100Tooltip.classList.add('hidden');
+    }
+    if (this.grid100HudText && this.size === 100) {
+      this.grid100HudText.textContent = 'Hover any tile to identify it';
+    }
+  }
+
+  updateHoverIdentifier(clientX, clientY) {
+    if (this.size !== 100) {
+      this.hideHoverIdentifier();
+      return;
+    }
+
+    this.ensureGrid100HoverElements();
+    const cellInfo = this.getCellFromPointer(clientX, clientY);
+    if (!cellInfo) {
+      this.hideHoverIdentifier();
+      return;
+    }
+
+    const { row, col, rect, cellSize } = cellInfo;
+    this.lastHoverCell = { row, col, clientX, clientY };
+
+    const tile = (this.grid[row] && this.grid[row][col]) || null;
+
+    // 1. Position & reveal reticle
+    if (this.grid100Reticle) {
+      const pad = 4;
+      const rx = pad + col * cellSize;
+      const ry = pad + row * cellSize;
+      const sizePx = Math.max(cellSize, 6);
+      this.grid100Reticle.style.width = `${sizePx}px`;
+      this.grid100Reticle.style.height = `${sizePx}px`;
+      this.grid100Reticle.style.transform = `translate(${rx}px, ${ry}px)`;
+      this.grid100Reticle.classList.remove('hidden');
+    }
+
+    // 2. Update Tooltip Content & Chip
+    if (this.grid100Tooltip) {
+      if (tile) {
+        const valStr = String(tile.value);
+        const tierClass = tile.value <= 8192 ? `tile-${tile.value}` : 'tile-super';
+        const digitClass = valStr.length >= 4 ? `tile-digits-${Math.min(valStr.length, 5)}` : '';
+        if (this.grid100TooltipChip) {
+          this.grid100TooltipChip.className = `grid-100-tooltip-chip tile ${tierClass} ${digitClass}`;
+          this.grid100TooltipChip.innerHTML = `<div class="tile-inner">${valStr}</div>`;
+        }
+        if (this.grid100TooltipTitle) {
+          this.grid100TooltipTitle.textContent = `Tile ${valStr}`;
+        }
+      } else {
+        if (this.grid100TooltipChip) {
+          this.grid100TooltipChip.className = 'grid-100-tooltip-chip tile-empty';
+          this.grid100TooltipChip.innerHTML = '';
+        }
+        if (this.grid100TooltipTitle) {
+          this.grid100TooltipTitle.textContent = 'Empty Cell';
+        }
+      }
+
+      if (this.grid100TooltipSub) {
+        this.grid100TooltipSub.textContent = `Row ${row + 1}, Col ${col + 1}`;
+      }
+
+      if (this.grid100TooltipAction) {
+        if (this.smashMode) {
+          this.grid100TooltipAction.textContent = tile
+            ? `🔨 Click to smash tile ${tile.value}`
+            : 'Select a tile to smash';
+          this.grid100TooltipAction.classList.remove('hidden');
+        } else if (this.swapMode) {
+          const firstVal =
+            this.swapFirstTile &&
+            this.grid[this.swapFirstTile.r] &&
+            this.grid[this.swapFirstTile.r][this.swapFirstTile.c]
+              ? this.grid[this.swapFirstTile.r][this.swapFirstTile.c].value
+              : null;
+          this.grid100TooltipAction.textContent = firstVal
+            ? `🔄 Swap with (${firstVal})`
+            : '🔄 Click to select 1st tile';
+          this.grid100TooltipAction.classList.remove('hidden');
+        } else if (this.doubleMode) {
+          this.grid100TooltipAction.textContent = tile
+            ? `✖️2 Double to ${tile.value * 2}`
+            : 'Select a tile to double';
+          this.grid100TooltipAction.classList.remove('hidden');
+        } else {
+          this.grid100TooltipAction.classList.add('hidden');
+        }
+      }
+
+      // Position tooltip near cursor clamped to board boundaries
+      const tipWidth = 190;
+      const tipHeight = this.smashMode || this.swapMode || this.doubleMode ? 72 : 54;
+      let tipX = clientX - rect.left - tipWidth / 2;
+      tipX = Math.max(6, Math.min(rect.width - tipWidth - 6, tipX));
+
+      let tipY = clientY - rect.top - tipHeight - 16;
+      if (tipY < 6) {
+        tipY = clientY - rect.top + 22;
+      }
+      tipY = Math.max(6, Math.min(rect.height - tipHeight - 6, tipY));
+
+      this.grid100Tooltip.style.transform = `translate(${Math.round(tipX)}px, ${Math.round(tipY)}px)`;
+      this.grid100Tooltip.classList.remove('hidden');
+    }
+
+    // 3. Update HUD Bar text
+    if (this.grid100HudText) {
+      if (tile) {
+        this.grid100HudText.textContent = `Hovering: Tile ${tile.value} at Row ${row + 1}, Col ${col + 1}`;
+      } else {
+        this.grid100HudText.textContent = `Hovering: Empty cell at Row ${row + 1}, Col ${col + 1}`;
+      }
+    }
   }
 
   updateUI() {
@@ -2865,6 +3105,58 @@ class Game8192 {
         }
       }
     });
+
+    // 100×100 Hover Identifier tracking
+    this.boardContainer.addEventListener('mousemove', (e) => {
+      if (this.size === 100) {
+        this.updateHoverIdentifier(e.clientX, e.clientY);
+      }
+    });
+
+    this.boardContainer.addEventListener('mouseleave', () => {
+      if (this.size === 100) {
+        this.hideHoverIdentifier();
+      }
+    });
+
+    this.boardContainer.addEventListener(
+      'touchmove',
+      (e) => {
+        if (this.size === 100 && e.touches.length === 1) {
+          this.updateHoverIdentifier(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      },
+      { passive: true }
+    );
+
+    this.boardContainer.addEventListener(
+      'touchend',
+      () => {
+        if (this.size === 100) {
+          this.hideHoverIdentifier();
+        }
+      },
+      { passive: true }
+    );
+
+    // Board click support for 100×100 power-up interactions
+    this.boardContainer.addEventListener('click', (e) => {
+      if (this.size !== 100) return;
+      if (!this.smashMode && !this.swapMode && !this.doubleMode) return;
+      const cellInfo = this.getCellFromPointer(e.clientX, e.clientY);
+      if (!cellInfo) return;
+      const { row, col } = cellInfo;
+      const tile = this.grid[row] && this.grid[row][col];
+      if (!tile) return;
+      e.stopPropagation();
+      if (this.smashMode) {
+        this.smashTileAt(row, col);
+      } else if (this.swapMode) {
+        this.handleSwapTileClick(row, col);
+      } else if (this.doubleMode) {
+        this.doubleTileAt(row, col);
+      }
+    });
   }
 }
 
@@ -2991,7 +3283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     type: 'timer', // 'timer' (Highest Number Timed) | 'race10' (Race to a Grid)
     players: 2,
     durationSec: 120,
-    targetGrid: 10, // Target grid size for race mode (5..10 or bonus 3)
+    targetGrid: 10, // Target grid size for race mode (5..10, 3, 2, or 100)
     remainingSec: 120,
     elapsedSec: 0,
     intervalId: null,
@@ -3020,12 +3312,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const buildTargetGridHint = (targetSize) => {
     const steps = [];
-    const maxStep = targetSize === 3 ? 10 : targetSize;
+    const maxStep = targetSize === 3 || targetSize === 2 || targetSize === 100 ? 10 : targetSize;
     for (let s = 4; s <= maxStep; s++) {
       steps.push(`${s}×${s}`);
     }
     if (targetSize === 3) {
       steps.push('3×3');
+    } else if (targetSize === 2) {
+      steps.push('2×2');
+    } else if (targetSize === 100) {
+      steps.push('2×2');
+      steps.push('100×100');
+    }
+
+    if (targetSize === 2) {
+      return `Path: ${steps.join(' → ')} (arm Activate 2×2, then reach 16384 on 10×10)`;
     }
     const { fromSize, requiredTile } = getGridUnlockRequirement(targetSize);
     return `Path: ${steps.join(' → ')} (reach ${requiredTile} on ${fromSize}×${fromSize})`;
@@ -3351,10 +3652,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  const VALID_BATTLE_TARGET_GRIDS = [5, 6, 7, 8, 9, 10, 3, 2, 100];
   Array.from(document.querySelectorAll('[data-battle-target-grid]')).forEach((btn) => {
     btn.addEventListener('click', () => {
       const chosen = Number(btn.getAttribute('data-battle-target-grid')) || 10;
-      battleState.targetGrid = chosen === 3 ? 3 : Math.max(5, Math.min(10, chosen));
+      battleState.targetGrid = VALID_BATTLE_TARGET_GRIDS.includes(chosen) ? chosen : 10;
       syncBattleModalUI();
     });
   });

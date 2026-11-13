@@ -255,7 +255,7 @@
   border: none;
 }
 
-.board-container[data-grid-size="100"] .tile {
+.board-container[data-grid-size="100"] .tile-container .tile {
   width: calc(var(--cell-size) - 1px);
   height: calc(var(--cell-size) - 1px);
   border-radius: 0px;
@@ -266,7 +266,7 @@
   transition: transform 80ms ease-out;
 }
 
-.board-container[data-grid-size="100"] .tile-inner {
+.board-container[data-grid-size="100"] .tile-container .tile-inner {
   border: none !important;
   outline: none !important;
   box-shadow: none;
@@ -282,16 +282,171 @@
   font-size: calc(var(--cell-size) * 0.52);
 }
 
-.board-container[data-grid-size="100"] .tile-digits-3 .tile-inner {
+.board-container[data-grid-size="100"] .tile-container .tile-digits-3 .tile-inner {
   font-size: calc(var(--cell-size) * 0.38);
 }
 
-.board-container[data-grid-size="100"] .tile-digits-4 .tile-inner {
+.board-container[data-grid-size="100"] .tile-container .tile-digits-4 .tile-inner {
   font-size: calc(var(--cell-size) * 0.30);
 }
 
-.board-container[data-grid-size="100"] .tile-digits-5 .tile-inner {
+.board-container[data-grid-size="100"] .tile-container .tile-digits-5 .tile-inner {
   font-size: calc(var(--cell-size) * 0.24);
+}
+
+/* 100×100 Hover Identifier HUD Bar, Reticle & Tooltip */
+.grid-100-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: var(--board-size);
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background-color: var(--score-bg);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-main);
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.grid-100-hud.hidden {
+  display: none !important;
+}
+
+.grid-100-hud-badge {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.grid-100-hud-text {
+  flex: 1;
+  text-align: right;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 8px;
+}
+
+.grid-100-reticle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 25;
+  border: 2px solid #22d3ee;
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.95), inset 0 0 4px rgba(34, 211, 238, 0.4);
+  background-color: rgba(34, 211, 238, 0.25);
+  transition: transform 25ms linear;
+}
+
+.grid-100-reticle.hidden {
+  display: none !important;
+}
+
+.grid-100-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.95);
+  color: #ffffff;
+  border: 1.5px solid rgba(34, 211, 238, 0.7);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 12px rgba(34, 211, 238, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+  transition: transform 30ms linear, opacity 0.12s ease;
+}
+
+.grid-100-tooltip.hidden {
+  display: none !important;
+}
+
+.grid-100-tooltip .grid-100-tooltip-chip {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.grid-100-tooltip .grid-100-tooltip-chip .tile-inner {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.grid-100-tooltip .grid-100-tooltip-chip.tile-empty {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1.5px dashed rgba(255, 255, 255, 0.28) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.grid-100-tooltip-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.grid-100-tooltip-title {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.grid-100-tooltip-sub {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.grid-100-tooltip-action {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #facc15;
+}
+
+.grid-100-tooltip-action.hidden {
+  display: none !important;
 }
 
 @media (max-width: 480px) {
@@ -1076,7 +1231,10 @@ body {
 
 .board-wrapper {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
 .board-container {
@@ -2613,8 +2771,9 @@ body {
 }
 
 .battle-grid-pills .battle-pill-btn {
-  flex: 1 1 50px;
+  flex: 1 1 52px;
   padding: 8px 4px;
+  white-space: nowrap;
 }
 
 .battle-target-hint {
