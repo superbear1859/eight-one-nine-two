@@ -6,11 +6,12 @@
 
 const WIN_TARGET = 8192;
 const BONUS_2X2_TARGET = 16384;
+const BONUS_2X2_3X3_TARGET = 512;
 const BONUS_100X100_TARGET = 32;
 const ALL_GRID_SIZES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 100];
 
 // Tile required on grid size `s` to unlock grid size `s + 1`
-// 4x4 -> 5x5: 128, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 10x10 (Armed) -> 2x2: 16384, 2x2 -> 100x100: 32
+// 4x4 -> 5x5: 128, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 10x10 (Armed) / 3x3 -> 2x2: 16384 / 512, 2x2 -> 100x100: 32
 function getUnlockTargetForSize(size) {
   return 128 * Math.pow(2, size - 4);
 }
@@ -21,7 +22,7 @@ function getGridUnlockRequirement(targetSize) {
     return { fromSize: 2, requiredTile: BONUS_100X100_TARGET };
   }
   if (targetSize === 2) {
-    return { fromSize: 10, requiredTile: BONUS_2X2_TARGET };
+    return { fromSize: 3, requiredTile: BONUS_2X2_3X3_TARGET, altFromSize: 10, altRequiredTile: BONUS_2X2_TARGET };
   }
   if (targetSize === 3) {
     return { fromSize: 10, requiredTile: WIN_TARGET };
@@ -79,6 +80,7 @@ const STORAGE_KEYS = {
   MUSIC: 'game_8192_music_v1',
   ACTIVE_SIZE: 'game_8192_active_size_v1',
   SPLIT_SCREEN: 'game_8192_split_screen_v1',
+  IDENTIFIER_ENABLED: 'game_8192_identifier_enabled_v1',
 };
 
 // Theme-based background music definitions (Web Audio procedural soundtracks)
@@ -896,9 +898,14 @@ class Game8192 {
     this.activate2x2LabelEl = q('activate-2x2-label', 'activate-2x2-label');
     this.resetUnlocksBtn = q('reset-unlocks-btn', 'reset-unlocks-btn');
 
-    // 100×100 Hover Identifier Elements
+    // Tile Identifier & Inspector Elements on Every Level
     this.grid100Hud = q('grid-100-hud', 'grid-100-hud');
+    this.grid100HudBadge = q('grid-100-hud-badge', 'grid-100-hud-badge');
     this.grid100HudText = q('grid-100-hud-text', 'grid-100-hud-text');
+    this.identifierSwitchBtn = q('identifier-switch-btn', 'identifier-switch-btn');
+    this.identifierSwitchLabel = q('identifier-switch-label', 'identifier-switch-label');
+    this.identifierToggleBtn = q('identifier-toggle', 'identifier-toggle');
+    this.identifierBtnLabel = q('identifier-label', 'identifier-label');
     this.grid100Reticle = q('grid-100-reticle', 'grid-100-reticle');
     this.grid100Tooltip = q('grid-100-tooltip', 'grid-100-tooltip');
     this.grid100TooltipChip = q('grid-100-tooltip-chip', 'grid-100-tooltip-chip');
@@ -906,6 +913,7 @@ class Game8192 {
     this.grid100TooltipSub = q('grid-100-tooltip-sub', 'grid-100-tooltip-sub');
     this.grid100TooltipAction = q('grid-100-tooltip-action', 'grid-100-tooltip-action');
     this.lastHoverCell = null;
+    this.identifierEnabled = this.loadIdentifierEnabled();
     this.ensureGrid100HoverElements();
 
     // Internal State
@@ -942,6 +950,7 @@ class Game8192 {
     this.updateMusicUI();
     this.updateSizeButtonsUI();
     this.updateActivate2x2UI();
+    this.updateIdentifierUI();
     this.bindEvents();
     this.switchGridSize(this.size, false);
   }
@@ -1011,8 +1020,16 @@ class Game8192 {
   }
 
   computeUnlocked2x2() {
-    // 2x2 is never unlocked retroactively from prior 16384 runs; only explicit unlock saves persist it
-    return localStorage.getItem(this.getUnlocked2x2Key()) === 'true';
+    if (localStorage.getItem(this.getUnlocked2x2Key()) === 'true') {
+      return true;
+    }
+    // Auto-unlock 2x2 if the player reached 512 on 3x3
+    const bestOn3 = parseInt(localStorage.getItem(this.getBestKey(3)), 10) || 0;
+    if (bestOn3 >= BONUS_2X2_3X3_TARGET) {
+      localStorage.setItem(this.getUnlocked2x2Key(), 'true');
+      return true;
+    }
+    return false;
   }
 
   computeUnlock2x2Armed() {
@@ -1079,6 +1096,18 @@ class Game8192 {
       if (newlyUnlocked.length > 0) {
         this.updateSizeButtonsUI(newlyUnlocked);
       }
+    } else if (this.size === 3) {
+      // 2x2 can also be unlocked by reaching 512 on 3x3!
+      if (!this.unlocked2x2 && (this.bestScore >= BONUS_2X2_3X3_TARGET || createdTileValue >= BONUS_2X2_3X3_TARGET)) {
+        this.unlocked2x2 = true;
+        this.unlock2x2Armed = false;
+        localStorage.setItem(this.getUnlocked2x2Key(), 'true');
+        localStorage.setItem(this.getArmed2x2Key(), 'false');
+        this.updateActivate2x2UI();
+        this.updateSizeButtonsUI([2]);
+        this.showToast('🎉 EXTREME 2×2 Grid Unlocked! (Reached 512 on 3×3)');
+        unlockedAny = true;
+      }
     } else if (this.size === 2 && !this.unlocked100x100 && this.bestScore >= BONUS_100X100_TARGET) {
       this.unlocked100x100 = true;
       localStorage.setItem(this.getUnlocked100x100Key(), 'true');
@@ -1106,7 +1135,7 @@ class Game8192 {
 
     if (this.unlock2x2Armed) {
       this.sound.playMilestone();
-      this.showToast('⚡ 2×2 Challenge Activated! Now get a 16384 tile on 10×10 to unlock 2×2!');
+      this.showToast('⚡ 2×2 Challenge Activated! Now get a 16384 tile on 10×10 (or reach 512 on 3×3) to unlock 2×2!');
     } else {
       this.showToast('2×2 Challenge deactivated.');
     }
@@ -1127,11 +1156,11 @@ class Game8192 {
     } else if (this.unlock2x2Armed) {
       if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = '2×2 Armed';
       this.activate2x2Btn.title =
-        'Activated! Get a 16384 tile on 10×10 to unlock 2×2 (click to deactivate).';
+        'Activated! Reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2 (click to deactivate).';
     } else {
       if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = 'Activate 2×2';
       this.activate2x2Btn.title =
-        'Press to activate first, then get a 16384 tile on 10×10 to unlock 2×2!';
+        'Press to activate first, then reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2!';
     }
   }
 
@@ -1186,8 +1215,8 @@ class Game8192 {
         btn.innerHTML = `${lockSvg}<span>${btnSize}×${btnSize}</span>`;
         if (btnSize === 2) {
           btn.title = this.unlock2x2Armed
-            ? `Armed! Reach the ${requiredTile} tile on ${fromSize}×${fromSize} to unlock!`
-            : `Locked — Press "Activate 2×2" first, then reach ${requiredTile} on ${fromSize}×${fromSize}!`;
+            ? 'Armed! Reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2!'
+            : 'Locked — Reach 512 on 3×3, or press "Activate 2×2" and reach 16384 on 10×10!';
         } else {
           btn.title = `Locked — Reach the ${requiredTile} tile on ${fromSize}×${fromSize} to unlock!`;
         }
@@ -1274,8 +1303,8 @@ class Game8192 {
       if (newSize === 2) {
         this.showToast(
           this.unlock2x2Armed
-            ? `Armed! Get a ${requiredTile} tile on ${fromSize}×${fromSize} to unlock 2×2!`
-            : `Locked! Press "Activate 2×2" first, then get a ${requiredTile} tile on ${fromSize}×${fromSize}!`
+            ? 'Armed! Reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2!'
+            : 'Locked! Reach 512 on 3×3, or press "Activate 2×2" and reach 16384 on 10×10!'
         );
       } else {
         this.showToast(
@@ -1301,12 +1330,7 @@ class Game8192 {
     if (this.rootEl && this.rootEl.classList) {
       this.rootEl.classList.toggle('grid-100-mode', this.size === 100);
     }
-    if (this.grid100Hud) {
-      this.grid100Hud.classList.toggle('hidden', this.size !== 100);
-      if (this.grid100HudText) {
-        this.grid100HudText.textContent = 'Hover any tile to identify it';
-      }
-    }
+    this.updateIdentifierUI();
     this.hideHoverIdentifier();
 
     // Build background empty cells (colossal grids like 100x100 render via CSS background grid)
@@ -1824,7 +1848,7 @@ class Game8192 {
     if (this.smashBtn) {
       this.smashBtn.classList.toggle('active', this.smashMode);
     }
-    if (this.size === 100 && this.lastHoverCell) {
+    if (this.identifierEnabled && this.lastHoverCell) {
       this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
     }
     if (this.smashMode) {
@@ -1855,7 +1879,7 @@ class Game8192 {
     if (this.doubleBtn) {
       this.doubleBtn.classList.toggle('active', this.doubleMode);
     }
-    if (this.size === 100 && this.lastHoverCell) {
+    if (this.identifierEnabled && this.lastHoverCell) {
       this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
     }
     if (this.doubleMode) {
@@ -1893,7 +1917,7 @@ class Game8192 {
     if (this.swapBtn) {
       this.swapBtn.classList.toggle('active', this.swapMode);
     }
-    if (this.size === 100 && this.lastHoverCell) {
+    if (this.identifierEnabled && this.lastHoverCell) {
       this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
     }
     if (this.swapMode) {
@@ -1919,7 +1943,7 @@ class Game8192 {
       if (domEl) {
         domEl.classList.add('swap-selected');
       }
-      if (this.size === 100 && this.lastHoverCell) {
+      if (this.identifierEnabled && this.lastHoverCell) {
         this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
       }
       this.showToast('Now click a 2nd tile to swap positions!');
@@ -1930,7 +1954,7 @@ class Game8192 {
     if (this.swapFirstTile.r === r && this.swapFirstTile.c === c) {
       this.swapFirstTile = null;
       this.clearSwapSelectionHighlight();
-      if (this.size === 100 && this.lastHoverCell) {
+      if (this.identifierEnabled && this.lastHoverCell) {
         this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
       }
       this.showToast('Selection cleared — click the 1st tile to swap!');
@@ -2227,14 +2251,68 @@ class Game8192 {
       }
     });
 
-    if (this.size === 100 && this.lastHoverCell) {
+    if (this.identifierEnabled && this.lastHoverCell) {
       this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
     }
   }
 
   /* ------------------------------------------------------------------------
-     100×100 Hover Tile Identifier & Reticle Tracking
+     Tile Identifier Switch & Inspector on Every Level
      ------------------------------------------------------------------------ */
+  getIdentifierEnabledKey() {
+    return `${STORAGE_KEYS.IDENTIFIER_ENABLED}${this.storageSuffix}`;
+  }
+
+  loadIdentifierEnabled() {
+    const saved = localStorage.getItem(this.getIdentifierEnabledKey());
+    return saved === null ? true : saved === 'true';
+  }
+
+  setIdentifierEnabled(enabled) {
+    this.identifierEnabled = Boolean(enabled);
+    localStorage.setItem(this.getIdentifierEnabledKey(), String(this.identifierEnabled));
+    this.updateIdentifierUI();
+    if (!this.identifierEnabled) {
+      this.hideHoverIdentifier();
+    } else if (this.lastHoverCell) {
+      this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
+    }
+  }
+
+  toggleIdentifier() {
+    this.setIdentifierEnabled(!this.identifierEnabled);
+    this.showToast(
+      this.identifierEnabled
+        ? `🔍 Tile Identifier: ON (${this.size}×${this.size} & All Levels)`
+        : '🔇 Tile Identifier: OFF'
+    );
+  }
+
+  updateIdentifierUI() {
+    if (this.grid100HudBadge) {
+      this.grid100HudBadge.textContent = `${this.size}×${this.size}`;
+    }
+    if (this.identifierSwitchBtn) {
+      this.identifierSwitchBtn.classList.toggle('active', this.identifierEnabled);
+    }
+    if (this.identifierSwitchLabel) {
+      this.identifierSwitchLabel.textContent = this.identifierEnabled ? 'ON' : 'OFF';
+    }
+    if (this.identifierToggleBtn) {
+      this.identifierToggleBtn.classList.toggle('active', this.identifierEnabled);
+    }
+    if (this.identifierBtnLabel) {
+      this.identifierBtnLabel.textContent = this.identifierEnabled ? 'ID: ON' : 'ID: OFF';
+    }
+    if (this.grid100HudText) {
+      if (!this.identifierEnabled) {
+        this.grid100HudText.textContent = 'Identifier OFF • Click switch to enable';
+      } else if (!this.lastHoverCell) {
+        this.grid100HudText.textContent = 'Hover any tile to identify it';
+      }
+    }
+  }
+
   ensureGrid100HoverElements() {
     if (!this.boardContainer) return;
     if (!this.grid100Reticle && typeof document.createElement === 'function') {
@@ -2275,39 +2353,121 @@ class Game8192 {
       this.grid100Tooltip.appendChild(details);
       this.boardContainer.appendChild(this.grid100Tooltip);
     }
+    if (!this.identifierSwitchBtn && this.grid100Hud && typeof document.createElement === 'function') {
+      this.identifierSwitchBtn = document.createElement('button');
+      this.identifierSwitchBtn.className = `identifier-switch-btn ${this.identifierEnabled ? 'active' : ''}`;
+      this.identifierSwitchBtn.setAttribute('type', 'button');
+      this.identifierSwitchBtn.setAttribute('data-role', 'identifier-switch-btn');
+      this.identifierSwitchBtn.innerHTML = `
+        <span class="switch-pill"><span class="switch-handle"></span></span>
+        <span class="switch-label" data-role="identifier-switch-label">${this.identifierEnabled ? 'ON' : 'OFF'}</span>
+      `;
+      this.identifierSwitchLabel = this.identifierSwitchBtn.querySelector('[data-role="identifier-switch-label"]');
+      this.identifierSwitchBtn.addEventListener('click', () => this.toggleIdentifier());
+      this.grid100Hud.appendChild(this.identifierSwitchBtn);
+    }
   }
 
   getCellFromPointer(clientX, clientY) {
     if (!this.boardContainer) return null;
-    const rect =
+    const defaultWidth = this.size === 100 ? 760 : 470;
+    const boardRect =
       typeof this.boardContainer.getBoundingClientRect === 'function'
         ? this.boardContainer.getBoundingClientRect()
-        : { left: 0, top: 0, width: 760, height: 760 };
+        : { left: 0, top: 0, width: defaultWidth, height: defaultWidth };
 
-    if (!rect || !rect.width || !rect.height) return null;
+    if (!boardRect || !boardRect.width || !boardRect.height) return null;
 
-    const pad = 4;
-    const contentWidth = rect.width - pad * 2;
-    const contentHeight = rect.height - pad * 2;
-    if (contentWidth <= 0 || contentHeight <= 0) return null;
+    if (this.size === 100) {
+      const pad = 4;
+      const contentWidth = boardRect.width - pad * 2;
+      const contentHeight = boardRect.height - pad * 2;
+      if (contentWidth <= 0 || contentHeight <= 0) return null;
 
-    const relX = clientX - rect.left - pad;
-    const relY = clientY - rect.top - pad;
+      const relX = clientX - boardRect.left - pad;
+      const relY = clientY - boardRect.top - pad;
 
-    if (relX < 0 || relX >= contentWidth || relY < 0 || relY >= contentHeight) {
+      if (relX < 0 || relX >= contentWidth || relY < 0 || relY >= contentHeight) {
+        return null;
+      }
+
+      const cellWidth = contentWidth / 100;
+      const cellHeight = contentHeight / 100;
+      const col = Math.floor(relX / cellWidth);
+      const row = Math.floor(relY / cellHeight);
+
+      return {
+        row: Math.max(0, Math.min(99, row)),
+        col: Math.max(0, Math.min(99, col)),
+        x: pad + col * cellWidth,
+        y: pad + row * cellHeight,
+        width: cellWidth,
+        height: cellHeight,
+        radius: 2,
+        boardRect,
+      };
+    }
+
+    // Normal Grids (2x2 through 10x10)
+    const gapTable = { 2: 18, 3: 14, 4: 12, 5: 10, 6: 8, 7: 6, 8: 5, 9: 4, 10: 4 };
+    const radTable = { 2: 12, 3: 10, 4: 8, 5: 7, 6: 6, 7: 5, 8: 5, 9: 4, 10: 4 };
+
+    let gap = gapTable[this.size] || 12;
+    let radius = radTable[this.size] || 8;
+
+    if (typeof window !== 'undefined' && window.getComputedStyle && this.boardContainer) {
+      try {
+        const style = window.getComputedStyle(this.boardContainer);
+        const gVal = parseFloat(style.getPropertyValue('--grid-gap'));
+        if (!Number.isNaN(gVal) && gVal > 0) gap = gVal;
+        const rVal = parseFloat(style.getPropertyValue('--tile-radius'));
+        if (!Number.isNaN(rVal) && rVal > 0) radius = rVal;
+      } catch (_) {
+        // Fall back to tables
+      }
+    }
+
+    const tileContainer = this.tileContainer || this.boardContainer;
+    const tileRect =
+      typeof tileContainer.getBoundingClientRect === 'function'
+        ? tileContainer.getBoundingClientRect()
+        : {
+            left: boardRect.left + gap,
+            top: boardRect.top + gap,
+            width: boardRect.width - gap * 2,
+            height: boardRect.height - gap * 2,
+          };
+
+    const relX = clientX - tileRect.left;
+    const relY = clientY - tileRect.top;
+
+    if (relX < -gap / 2 || relX > tileRect.width + gap / 2 || relY < -gap / 2 || relY > tileRect.height + gap / 2) {
       return null;
     }
 
-    const cellWidth = contentWidth / this.size;
-    const cellHeight = contentHeight / this.size;
-    const col = Math.floor(relX / cellWidth);
-    const row = Math.floor(relY / cellHeight);
+    // Step between cell origins = (tileAreaWidth + gap) / size
+    const step = (tileRect.width + gap) / this.size;
+    const cellSize = step - gap;
+
+    const col = Math.floor((relX + gap / 2) / step);
+    const row = Math.floor((relY + gap / 2) / step);
+
+    if (col < 0 || col >= this.size || row < 0 || row >= this.size) {
+      return null;
+    }
+
+    const tileLeft = tileRect.left - boardRect.left;
+    const tileTop = tileRect.top - boardRect.top;
 
     return {
       row: Math.max(0, Math.min(this.size - 1, row)),
       col: Math.max(0, Math.min(this.size - 1, col)),
-      rect,
-      cellSize: cellWidth,
+      x: tileLeft + col * step,
+      y: tileTop + row * step,
+      width: cellSize,
+      height: cellSize,
+      radius,
+      boardRect,
     };
   }
 
@@ -2319,13 +2479,17 @@ class Game8192 {
     if (this.grid100Tooltip) {
       this.grid100Tooltip.classList.add('hidden');
     }
-    if (this.grid100HudText && this.size === 100) {
-      this.grid100HudText.textContent = 'Hover any tile to identify it';
+    if (this.grid100HudText) {
+      if (!this.identifierEnabled) {
+        this.grid100HudText.textContent = 'Identifier OFF • Click switch to enable';
+      } else {
+        this.grid100HudText.textContent = 'Hover any tile to identify it';
+      }
     }
   }
 
   updateHoverIdentifier(clientX, clientY) {
-    if (this.size !== 100) {
+    if (!this.identifierEnabled) {
       this.hideHoverIdentifier();
       return;
     }
@@ -2337,20 +2501,17 @@ class Game8192 {
       return;
     }
 
-    const { row, col, rect, cellSize } = cellInfo;
+    const { row, col, x, y, width, height, radius, boardRect } = cellInfo;
     this.lastHoverCell = { row, col, clientX, clientY };
 
     const tile = (this.grid[row] && this.grid[row][col]) || null;
 
-    // 1. Position & reveal reticle
+    // 1. Position & reveal reticle with exact cell geometry
     if (this.grid100Reticle) {
-      const pad = 4;
-      const rx = pad + col * cellSize;
-      const ry = pad + row * cellSize;
-      const sizePx = Math.max(cellSize, 6);
-      this.grid100Reticle.style.width = `${sizePx}px`;
-      this.grid100Reticle.style.height = `${sizePx}px`;
-      this.grid100Reticle.style.transform = `translate(${rx}px, ${ry}px)`;
+      this.grid100Reticle.style.width = `${Math.round(width)}px`;
+      this.grid100Reticle.style.height = `${Math.round(height)}px`;
+      this.grid100Reticle.style.borderRadius = `${radius}px`;
+      this.grid100Reticle.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
       this.grid100Reticle.classList.remove('hidden');
     }
 
@@ -2411,14 +2572,14 @@ class Game8192 {
       // Position tooltip near cursor clamped to board boundaries
       const tipWidth = 190;
       const tipHeight = this.smashMode || this.swapMode || this.doubleMode ? 72 : 54;
-      let tipX = clientX - rect.left - tipWidth / 2;
-      tipX = Math.max(6, Math.min(rect.width - tipWidth - 6, tipX));
+      let tipX = clientX - boardRect.left - tipWidth / 2;
+      tipX = Math.max(6, Math.min(boardRect.width - tipWidth - 6, tipX));
 
-      let tipY = clientY - rect.top - tipHeight - 16;
+      let tipY = clientY - boardRect.top - tipHeight - 16;
       if (tipY < 6) {
-        tipY = clientY - rect.top + 22;
+        tipY = clientY - boardRect.top + 22;
       }
-      tipY = Math.max(6, Math.min(rect.height - tipHeight - 6, tipY));
+      tipY = Math.max(6, Math.min(boardRect.height - tipHeight - 6, tipY));
 
       this.grid100Tooltip.style.transform = `translate(${Math.round(tipX)}px, ${Math.round(tipY)}px)`;
       this.grid100Tooltip.classList.remove('hidden');
@@ -3015,6 +3176,9 @@ class Game8192 {
         } else if (e.code === 'KeyN') {
           e.preventDefault();
           game1.startNewGame();
+        } else if (e.code === 'KeyI' && screenCount < 3) {
+          e.preventDefault();
+          game1.toggleIdentifier();
         }
       });
     }
@@ -3106,23 +3270,34 @@ class Game8192 {
       }
     });
 
-    // 100×100 Hover Identifier tracking
+    // Tile Identifier Switch & Hover tracking on Every Level
+    if (this.identifierSwitchBtn) {
+      this.identifierSwitchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleIdentifier();
+      });
+    }
+
+    if (this.identifierToggleBtn) {
+      this.identifierToggleBtn.addEventListener('click', () => {
+        this.toggleIdentifier();
+      });
+    }
+
     this.boardContainer.addEventListener('mousemove', (e) => {
-      if (this.size === 100) {
+      if (this.identifierEnabled) {
         this.updateHoverIdentifier(e.clientX, e.clientY);
       }
     });
 
     this.boardContainer.addEventListener('mouseleave', () => {
-      if (this.size === 100) {
-        this.hideHoverIdentifier();
-      }
+      this.hideHoverIdentifier();
     });
 
     this.boardContainer.addEventListener(
       'touchmove',
       (e) => {
-        if (this.size === 100 && e.touches.length === 1) {
+        if (this.identifierEnabled && e.touches.length === 1) {
           this.updateHoverIdentifier(e.touches[0].clientX, e.touches[0].clientY);
         }
       },
@@ -3132,16 +3307,13 @@ class Game8192 {
     this.boardContainer.addEventListener(
       'touchend',
       () => {
-        if (this.size === 100) {
-          this.hideHoverIdentifier();
-        }
+        this.hideHoverIdentifier();
       },
       { passive: true }
     );
 
-    // Board click support for 100×100 power-up interactions
+    // Board click support for power-up interactions on every level
     this.boardContainer.addEventListener('click', (e) => {
-      if (this.size !== 100) return;
       if (!this.smashMode && !this.swapMode && !this.doubleMode) return;
       const cellInfo = this.getCellFromPointer(e.clientX, e.clientY);
       if (!cellInfo) return;
@@ -3326,7 +3498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (targetSize === 2) {
-      return `Path: ${steps.join(' → ')} (arm Activate 2×2, then reach 16384 on 10×10)`;
+      return `Path: ${steps.join(' → ')} (reach 512 on 3×3, or arm Activate 2×2 & reach 16384 on 10×10)`;
     }
     const { fromSize, requiredTile } = getGridUnlockRequirement(targetSize);
     return `Path: ${steps.join(' → ')} (reach ${requiredTile} on ${fromSize}×${fromSize})`;

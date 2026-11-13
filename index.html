@@ -58,7 +58,7 @@
         <button type="button" class="size-btn" data-size="3">3×3</button>
         <button type="button" class="size-btn" data-size="2">2×2</button>
         <button type="button" class="size-btn" data-size="100">100×100</button>
-        <button type="button" class="activate-2x2-btn" id="activate-2x2-btn" data-role="activate-2x2-btn" aria-pressed="false" title="Activate 2×2 Challenge: Press first, then get a 16384 tile on 10×10 to unlock 2×2!">
+        <button type="button" class="activate-2x2-btn" id="activate-2x2-btn" data-role="activate-2x2-btn" aria-pressed="false" title="Activate 2×2 Challenge: Press first, then reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2!">
           <svg class="icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
           </svg>
@@ -209,6 +209,18 @@
           <span id="theme-label" data-role="theme-label">Light</span>
         </button>
 
+        <button type="button" class="action-btn identifier-btn active" id="identifier-toggle" data-role="identifier-toggle" title="Toggle Tile Identifier Switch (I)" aria-label="Toggle Tile Identifier Switch">
+          <svg class="icon identifier-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="22" y1="12" x2="18" y2="12"></line>
+            <line x1="6" y1="12" x2="2" y2="12"></line>
+            <line x1="12" y1="6" x2="12" y2="2"></line>
+            <line x1="12" y1="22" x2="12" y2="18"></line>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <span data-role="identifier-label">ID: ON</span>
+        </button>
+
         <button type="button" class="action-btn guide-btn" id="guide-btn" data-role="guide-btn" title="Open 8192 Guide Book: Tips &amp; Tricks (G)">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
@@ -236,9 +248,15 @@
 
     <!-- Main Game Board -->
     <main class="board-wrapper">
-      <div class="grid-100-hud hidden" id="grid-100-hud" data-role="grid-100-hud">
-        <span class="grid-100-hud-badge">100×100</span>
+      <div class="grid-100-hud grid-identifier-hud" id="grid-100-hud" data-role="grid-100-hud">
+        <span class="grid-100-hud-badge" id="grid-100-hud-badge" data-role="grid-100-hud-badge">4×4</span>
         <span class="grid-100-hud-text" id="grid-100-hud-text" data-role="grid-100-hud-text">Hover any tile to identify it</span>
+        <button type="button" class="identifier-switch-btn active" id="identifier-switch-btn" data-role="identifier-switch-btn" title="Toggle Tile Identifier Switch (I)" aria-label="Toggle Tile Identifier Switch">
+          <span class="switch-pill">
+            <span class="switch-handle"></span>
+          </span>
+          <span class="switch-label" id="identifier-switch-label" data-role="identifier-switch-label">ON</span>
+        </button>
       </div>
       <div class="board-container" id="board-container" data-role="board-container" data-grid-size="4">
         <div class="grid-background" id="grid-background" data-role="grid-background"></div>
@@ -279,7 +297,7 @@
         <strong>HOW TO PLAY:</strong> Use your <strong>arrow keys</strong>, <strong>WASD</strong>, or <strong>swipe</strong> to slide tiles. In <strong>Multi-Screen Mode (1–4 Screens)</strong>, swipe any board independently (or use <strong>WASD</strong> for P1, <strong>Arrows</strong> for P2, <strong>IJKL</strong> for P3, &amp; <strong>TFGH</strong> for P4)!
       </p>
       <p class="undo-rules">
-        <strong>PROGRESSION:</strong> Reach <strong>128</strong> on <strong>4×4</strong> to unlock <strong>5×5</strong>, <strong>256</strong> on <strong>5×5</strong> to unlock <strong>6×6</strong>, …, <strong>4096</strong> on <strong>9×9</strong> to unlock <strong>10×10</strong>, <strong>8192</strong> on <strong>10×10</strong> for <strong>3×3</strong>, press <strong>Activate 2×2</strong> before reaching <strong>16384</strong> on <strong>10×10</strong> for <strong>2×2</strong>, and reach <strong>32</strong> on <strong>2×2</strong> to unlock the mega <strong>100×100</strong> grid!
+        <strong>PROGRESSION:</strong> Reach <strong>128</strong> on <strong>4×4</strong> to unlock <strong>5×5</strong>, <strong>256</strong> on <strong>5×5</strong> to unlock <strong>6×6</strong>, …, <strong>4096</strong> on <strong>9×9</strong> to unlock <strong>10×10</strong>, <strong>8192</strong> on <strong>10×10</strong> for <strong>3×3</strong>, reach <strong>512</strong> on <strong>3×3</strong> (or press <strong>Activate 2×2</strong> before reaching <strong>16384</strong> on <strong>10×10</strong>) for <strong>2×2</strong>, and reach <strong>32</strong> on <strong>2×2</strong> to unlock the mega <strong>100×100</strong> grid!
       </p>
       <p class="undo-rules">
         <strong>POWER-UPS:</strong> Start with <strong>3 Undos</strong> (max 5), <strong>2 Smashes</strong> (max 3), <strong>2 Swaps</strong> (max 3), and <strong>1 Double</strong> (max 1). Click <strong>Smash</strong> (<code>X</code>) to destroy any tile, <strong>Swap</strong> (<code>C</code>) to swap two tiles, or <strong>Double</strong> (<code>V</code>) to 2× any tile! Earn <strong>+1 Undo</strong> on every new block (<strong>8+</strong>) and <strong>+1 Smash, +1 Swap &amp; +1 Double</strong> on major milestone blocks (<strong>128+</strong>).
@@ -370,7 +388,7 @@
             <li><strong>8×8 → 9×9:</strong> Reach <strong>2048</strong> on 8×8</li>
             <li><strong>9×9 → 10×10:</strong> Reach <strong>4096</strong> on 9×9</li>
             <li><strong>10×10 → 3×3:</strong> Reach <strong>8192</strong> on 10×10 (Bonus Mastery Grid!)</li>
-            <li><strong>10×10 → 2×2:</strong> Press <strong>Activate 2×2</strong> first, then reach <strong>16384</strong> on 10×10 (Extreme 4-Cell Challenge!)</li>
+            <li><strong>Unlock 2×2:</strong> Reach <strong>512</strong> on 3×3, or press <strong>Activate 2×2</strong> first and reach <strong>16384</strong> on 10×10 (Extreme 4-Cell Challenge!)</li>
             <li><strong>2×2 → 100×100:</strong> Reach <strong>32</strong> on 2×2 (Mega 10,000-Cell Sandbox!)</li>
           </ul>
         </section>
