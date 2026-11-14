@@ -6,12 +6,12 @@
 
 const WIN_TARGET = 8192;
 const BONUS_2X2_TARGET = 16384;
-const BONUS_2X2_3X3_TARGET = 512;
+const BONUS_2X2_3X3_TARGET = 256;
 const BONUS_100X100_TARGET = 32;
 const ALL_GRID_SIZES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 100];
 
 // Tile required on grid size `s` to unlock grid size `s + 1`
-// 4x4 -> 5x5: 128, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 10x10 (Armed) / 3x3 -> 2x2: 16384 / 512, 2x2 -> 100x100: 32
+// 4x4 -> 5x5: 128, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 10x10 (Armed) / 3x3 -> 2x2: 16384 / 256, 2x2 -> 100x100: 32
 function getUnlockTargetForSize(size) {
   return 128 * Math.pow(2, size - 4);
 }
@@ -76,7 +76,7 @@ const STORAGE_KEYS = {
   MAX_UNLOCKED_SIZE: 'game_8192_max_unlocked_size_v1',
   UNLOCKED_3X3: 'game_8192_unlocked_3x3_v1',
   UNLOCKED_2X2: 'game_8192_unlocked_2x2_v1',
-  ARMED_2X2: 'game_8192_armed_2x2_v1',
+  ARMED_2X2: 'game_8192_armed_2x2_v2',
   UNLOCKED_100X100: 'game_8192_unlocked_100x100_v1',
   THEME: 'game_8192_theme_v1',
   SOUND: 'game_8192_sound_v1',
@@ -1031,7 +1031,7 @@ class Game8192 {
     if (localStorage.getItem(this.getUnlocked2x2Key()) === 'true') {
       return true;
     }
-    // Auto-unlock 2x2 if the player reached 512 on 3x3
+    // Auto-unlock 2x2 if the player reached 256 on 3x3
     const bestOn3 = parseInt(localStorage.getItem(this.getBestKey(3)), 10) || 0;
     if (bestOn3 >= BONUS_2X2_3X3_TARGET) {
       localStorage.setItem(this.getUnlocked2x2Key(), 'true');
@@ -1041,7 +1041,11 @@ class Game8192 {
   }
 
   computeUnlock2x2Armed() {
-    return localStorage.getItem(this.getArmed2x2Key()) === 'true';
+    const saved = localStorage.getItem(this.getArmed2x2Key());
+    if (saved !== null) {
+      return saved === 'true';
+    }
+    return true;
   }
 
   computeUnlocked100x100() {
@@ -1105,7 +1109,7 @@ class Game8192 {
         this.updateSizeButtonsUI(newlyUnlocked);
       }
     } else if (this.size === 3) {
-      // 2x2 can also be unlocked by reaching 512 on 3x3!
+      // 2x2 can also be unlocked by reaching 256 on 3x3!
       if (!this.unlocked2x2 && (this.bestScore >= BONUS_2X2_3X3_TARGET || createdTileValue >= BONUS_2X2_3X3_TARGET)) {
         this.unlocked2x2 = true;
         this.unlock2x2Armed = false;
@@ -1113,7 +1117,7 @@ class Game8192 {
         localStorage.setItem(this.getArmed2x2Key(), 'false');
         this.updateActivate2x2UI();
         this.updateSizeButtonsUI([2]);
-        this.showToast('🎉 EXTREME 2×2 Grid Unlocked! (Reached 512 on 3×3)');
+        this.showToast('🎉 EXTREME 2×2 Grid Unlocked! (Reached 256 on 3×3)');
         unlockedAny = true;
       }
     } else if (this.size === 2 && !this.unlocked100x100 && this.bestScore >= BONUS_100X100_TARGET) {
@@ -1143,7 +1147,7 @@ class Game8192 {
 
     if (this.unlock2x2Armed) {
       this.sound.playMilestone();
-      this.showToast('⚡ 2×2 Challenge Activated! Now get a 16384 tile on 10×10 (or reach 512 on 3×3) to unlock 2×2!');
+      this.showToast('⚡ 2×2 Challenge Activated! Now get a 16384 tile on 10×10 (or reach 256 on 3×3) to unlock 2×2!');
     } else {
       this.showToast('2×2 Challenge deactivated.');
     }
@@ -1164,11 +1168,11 @@ class Game8192 {
     } else if (this.unlock2x2Armed) {
       if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = '2×2 Armed';
       this.activate2x2Btn.title =
-        'Activated! Reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2 (click to deactivate).';
+        'Activated! Reach 16384 on 10×10 (or reach 256 on 3×3) to unlock 2×2 (click to deactivate).';
     } else {
       if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = 'Activate 2×2';
       this.activate2x2Btn.title =
-        'Press to activate first, then reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2!';
+        'Press to activate first, then reach 16384 on 10×10 (or reach 256 on 3×3) to unlock 2×2!';
     }
   }
 
@@ -1176,12 +1180,12 @@ class Game8192 {
     this.maxUnlockedSize = 4;
     this.unlocked3x3 = false;
     this.unlocked2x2 = false;
-    this.unlock2x2Armed = false;
+    this.unlock2x2Armed = true;
     this.unlocked100x100 = false;
     localStorage.setItem(this.getMaxUnlockedKey(), '4');
     localStorage.setItem(this.getUnlocked3x3Key(), 'false');
     localStorage.setItem(this.getUnlocked2x2Key(), 'false');
-    localStorage.setItem(this.getArmed2x2Key(), 'false');
+    localStorage.setItem(this.getArmed2x2Key(), 'true');
     localStorage.setItem(this.getUnlocked100x100Key(), 'false');
 
     // Clear saved boards and best blocks so all progressive & bonus grids reset cleanly
@@ -1223,8 +1227,8 @@ class Game8192 {
         btn.innerHTML = `${lockSvg}<span>${btnSize}×${btnSize}</span>`;
         if (btnSize === 2) {
           btn.title = this.unlock2x2Armed
-            ? 'Armed! Reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2!'
-            : 'Locked — Reach 512 on 3×3, or press "Activate 2×2" and reach 16384 on 10×10!';
+            ? 'Armed! Reach 16384 on 10×10 (or reach 256 on 3×3) to unlock 2×2!'
+            : 'Locked — Reach 256 on 3×3, or press "Activate 2×2" and reach 16384 on 10×10!';
         } else {
           btn.title = `Locked — Reach the ${requiredTile} tile on ${fromSize}×${fromSize} to unlock!`;
         }
@@ -1311,8 +1315,8 @@ class Game8192 {
       if (newSize === 2) {
         this.showToast(
           this.unlock2x2Armed
-            ? 'Armed! Reach 16384 on 10×10 (or reach 512 on 3×3) to unlock 2×2!'
-            : 'Locked! Reach 512 on 3×3, or press "Activate 2×2" and reach 16384 on 10×10!'
+            ? 'Armed! Reach 16384 on 10×10 (or reach 256 on 3×3) to unlock 2×2!'
+            : 'Locked! Reach 256 on 3×3, or press "Activate 2×2" and reach 16384 on 10×10!'
         );
       } else {
         this.showToast(
@@ -3759,7 +3763,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (targetSize === 2) {
-      return `Path: ${steps.join(' → ')} (reach 512 on 3×3, or arm Activate 2×2 & reach 16384 on 10×10)`;
+      return `Path: ${steps.join(' → ')} (reach 256 on 3×3, or arm Activate 2×2 & reach 16384 on 10×10)`;
     }
     const { fromSize, requiredTile } = getGridUnlockRequirement(targetSize);
     return `Path: ${steps.join(' → ')} (reach ${requiredTile} on ${fromSize}×${fromSize})`;

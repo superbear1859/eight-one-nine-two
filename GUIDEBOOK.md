@@ -62,7 +62,7 @@ Each grid size has its own saved board and **BEST** block record. Each board dou
 | **9×9** | Reach `2048` on `8×8` | 81 cells; great for practicing `16384` and `32768` chains. |
 | **10×10** | Reach `4096` on `9×9` | Ultimate 100-cell sandbox for chasing `65536` and beyond! |
 | **3×3 (Bonus)** | Reach `8192` on `10×10` | Tight 9-cell mastery challenge for extreme board planning! |
-| **2×2 (Extreme)** | Reach `512` on `3×3`, or press **Activate 2×2** first & reach `16384` on `10×10` | Ultra-tiny 4-cell chaos challenge—reach 512 on 3×3 or arm Activate 2×2 on 10×10! |
+| **2×2 (Extreme)** | Reach `256` on `3×3`, or reach `16384` on `10×10` (starts armed by default) | Ultra-tiny 4-cell chaos challenge—reach 256 on 3×3, or reach 16384 on 10×10 while armed! |
 | **100×100 (Mega)** | Reach `32` on `2×2` | Colossal 10,000-cell playground unlocked from 2×2 mastery! |
 
 ---
