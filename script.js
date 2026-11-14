@@ -11,7 +11,7 @@ const BONUS_100X100_TARGET = 32;
 const ALL_GRID_SIZES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 100];
 
 // Tile required on grid size `s` to unlock grid size `s + 1`
-// 4x4 -> 5x5: 128, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 10x10 (Armed) / 3x3 -> 2x2: 16384 / 256, 2x2 -> 100x100: 32
+// 4x4 -> 5x5: 128, ..., 9x9 -> 10x10: 4096, 10x10 -> 3x3: 8192, 3x3 (Armed) -> 256 / 10x10 (Armed) -> 16384: 2x2, 2x2 -> 100x100: 32
 function getUnlockTargetForSize(size) {
   return 128 * Math.pow(2, size - 4);
 }
@@ -1028,16 +1028,8 @@ class Game8192 {
   }
 
   computeUnlocked2x2() {
-    if (localStorage.getItem(this.getUnlocked2x2Key()) === 'true') {
-      return true;
-    }
-    // Auto-unlock 2x2 if the player reached 256 on 3x3
-    const bestOn3 = parseInt(localStorage.getItem(this.getBestKey(3)), 10) || 0;
-    if (bestOn3 >= BONUS_2X2_3X3_TARGET) {
-      localStorage.setItem(this.getUnlocked2x2Key(), 'true');
-      return true;
-    }
-    return false;
+    // 2x2 requires arming and is never unlocked retroactively from prior runs; only explicit unlock saves persist it
+    return localStorage.getItem(this.getUnlocked2x2Key()) === 'true';
   }
 
   computeUnlock2x2Armed() {
@@ -1109,15 +1101,15 @@ class Game8192 {
         this.updateSizeButtonsUI(newlyUnlocked);
       }
     } else if (this.size === 3) {
-      // 2x2 can also be unlocked by reaching 256 on 3x3!
-      if (!this.unlocked2x2 && (this.bestScore >= BONUS_2X2_3X3_TARGET || createdTileValue >= BONUS_2X2_3X3_TARGET)) {
+      // 2x2 requires Activate 2x2 to be armed BEFORE newly getting 256 on 3x3
+      if (!this.unlocked2x2 && this.unlock2x2Armed && createdTileValue >= BONUS_2X2_3X3_TARGET) {
         this.unlocked2x2 = true;
         this.unlock2x2Armed = false;
         localStorage.setItem(this.getUnlocked2x2Key(), 'true');
         localStorage.setItem(this.getArmed2x2Key(), 'false');
         this.updateActivate2x2UI();
         this.updateSizeButtonsUI([2]);
-        this.showToast('🎉 EXTREME 2×2 Grid Unlocked! (Reached 256 on 3×3)');
+        this.showToast('🎉 EXTREME 2×2 Grid Unlocked! (Reached 256 on 3×3 while armed)');
         unlockedAny = true;
       }
     } else if (this.size === 2 && !this.unlocked100x100 && this.bestScore >= BONUS_100X100_TARGET) {
@@ -1147,7 +1139,7 @@ class Game8192 {
 
     if (this.unlock2x2Armed) {
       this.sound.playMilestone();
-      this.showToast('⚡ 2×2 Challenge Activated! Now get a 16384 tile on 10×10 (or reach 256 on 3×3) to unlock 2×2!');
+      this.showToast('⚡ 2×2 Challenge Activated! Now reach 256 on 3×3 or 16384 on 10×10 while armed to unlock 2×2!');
     } else {
       this.showToast('2×2 Challenge deactivated.');
     }
@@ -1168,11 +1160,11 @@ class Game8192 {
     } else if (this.unlock2x2Armed) {
       if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = '2×2 Armed';
       this.activate2x2Btn.title =
-        'Activated! Reach 16384 on 10×10 (or reach 256 on 3×3) to unlock 2×2 (click to deactivate).';
+        'Activated! Reach 256 on 3×3 or 16384 on 10×10 while armed to unlock 2×2 (click to deactivate).';
     } else {
       if (this.activate2x2LabelEl) this.activate2x2LabelEl.textContent = 'Activate 2×2';
       this.activate2x2Btn.title =
-        'Press to activate first, then reach 16384 on 10×10 (or reach 256 on 3×3) to unlock 2×2!';
+        'Press to arm 2×2 first, then reach 256 on 3×3 or 16384 on 10×10 to unlock 2×2!';
     }
   }
 
@@ -1227,8 +1219,8 @@ class Game8192 {
         btn.innerHTML = `${lockSvg}<span>${btnSize}×${btnSize}</span>`;
         if (btnSize === 2) {
           btn.title = this.unlock2x2Armed
-            ? 'Armed! Reach 16384 on 10×10 (or reach 256 on 3×3) to unlock 2×2!'
-            : 'Locked — Reach 256 on 3×3, or press "Activate 2×2" and reach 16384 on 10×10!';
+            ? 'Armed! Reach 256 on 3×3 or 16384 on 10×10 to unlock 2×2!'
+            : 'Locked — Arm 2×2 first and reach 256 on 3×3 or 16384 on 10×10!';
         } else {
           btn.title = `Locked — Reach the ${requiredTile} tile on ${fromSize}×${fromSize} to unlock!`;
         }
@@ -1315,8 +1307,8 @@ class Game8192 {
       if (newSize === 2) {
         this.showToast(
           this.unlock2x2Armed
-            ? 'Armed! Reach 16384 on 10×10 (or reach 256 on 3×3) to unlock 2×2!'
-            : 'Locked! Reach 256 on 3×3, or press "Activate 2×2" and reach 16384 on 10×10!'
+            ? 'Armed! Reach 256 on 3×3 or 16384 on 10×10 to unlock 2×2!'
+            : 'Locked! Arm 2×2 first and reach 256 on 3×3 or 16384 on 10×10!'
         );
       } else {
         this.showToast(
@@ -3763,7 +3755,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (targetSize === 2) {
-      return `Path: ${steps.join(' → ')} (reach 256 on 3×3, or arm Activate 2×2 & reach 16384 on 10×10)`;
+      return `Path: ${steps.join(' → ')} (arm 2×2 & reach 256 on 3×3 or 16384 on 10×10)`;
     }
     const { fromSize, requiredTile } = getGridUnlockRequirement(targetSize);
     return `Path: ${steps.join(' → ')} (reach ${requiredTile} on ${fromSize}×${fromSize})`;
