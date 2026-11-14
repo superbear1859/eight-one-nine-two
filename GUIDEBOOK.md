@@ -29,20 +29,22 @@ Once your corner block reaches `512` or `1024`, random merging won't be enough�
 
 ---
 
-## 3. Mastering Undo, Smash, Swap & Double Power-Ups
+## 3. Mastering Undo, Smash, Swap, Double & Not Best Double Power-Ups
 
 ### Earning Power-Ups
 - **Undo (`U` or `Backspace`)**: Start with **3** (hold up to **5**). Earn **+1 Undo** every time you merge a new highest block (`8`, `16`, `32`, `64`, `128`, …) for the first time in a match.
 - **Smash (`X`)**: Start with **2** (hold up to **3**). Earn **+1 Smash** every time you merge a major milestone block (`128`, `256`, `512`, `1024`, `2048`, `4096`, `8192+`) for the first time in a match.
 - **Swap (`C`)**: Start with **2** (hold up to **3**). Earn **+1 Swap** every time you merge a major milestone block (`128`, `256`, `512`, `1024`, `2048`, `4096`, `8192+`) for the first time in a match.
 - **Double (`V`)**: Start with **1** (hold up to **1**). Earn **+1 Double** every time you merge a major milestone block (`128`, `256`, `512`, `1024`, `2048`, `4096`, `8192+`) for the first time in a match.
+- **Not Best Double (`Z`)**: Start with **2** (hold up to **3**). Earn **+1 Not Best Double** every time you merge a major milestone block (`128`, `256`, `512`, `1024`, `2048`, `4096`, `8192+`) for the first time in a match. Can double any tile on the board *except* your current biggest tile!
 
 ### Pro Power-Up Tricks
 1. **Use Smash to Clear Wedged Low Tiles**: The #1 run-killer in 2048-style games is a `2` or `4` getting trapped between two massive tiles (e.g., `[ 2048 ] [ 4 ] [ 1024 ]`). Instead of breaking your snake chain to merge that `4`, press **`X`** and **Smash** the `4` so `1024` slides right next to `2048`!
 2. **Use Swap to Repair Your Snake or Pair Distant Twins**: If your highest tile gets pulled out of your anchor corner—or if two matching high-tier tiles (like two `512`s) are stranded on opposite sides of the board—press **`C`** and click any two tiles to swap their positions cleanly!
 3. **Use Double to Instant-Upgrade Any Tile (`2×`)**: Press **`V`** and click any tile on the board to double its value in place! You can use it to instantly promote your second-highest tile so it merges into your corner anchor, or upgrade a trapped low tile so it matches its neighbor.
-4. **Undo Corner Hijacks Immediately**: If you are forced to swipe **Up** (away from a bottom corner) and a new `2` or `4` spawns inside your corner cell, press **Undo** right away. Often you can use **Smash**, **Swap**, or **Double** first so you never have to swipe Up in the first place.
-5. **Don't Sit on Full Charges Before a Milestone**: Since Undo caps at **5**, Smash/Swap cap at **3**, and Double caps at **1**, check your badges before merging a new milestone tile (`128`, `256`, `512`, `1024`). If you're already at full capacity, spend a charge to tidy up your board right before completing the milestone merge—you'll immediately earn that charge right back!
+4. **Use Not Best Double to Build Supporting Runners (`Z`)**: Press **`Z`** and click any tile *other than your biggest tile* to double it! If your anchor tile is `2048` and you have a `512`, double the `512` into a `1024` without having to spend your precious full Double.
+5. **Undo Corner Hijacks Immediately**: If you are forced to swipe **Up** (away from a bottom corner) and a new `2` or `4` spawns inside your corner cell, press **Undo** right away. Often you can use **Smash**, **Swap**, or **Double** first so you never have to swipe Up in the first place.
+6. **Don't Sit on Full Charges Before a Milestone**: Since Undo caps at **5**, Smash/Swap/Not Best Double cap at **3**, and Double caps at **1**, check your badges before merging a new milestone tile (`128`, `256`, `512`, `1024`). If you're already at full capacity, spend a charge to tidy up your board right before completing the milestone merge—you'll immediately earn that charge right back!
 
 ---
 
@@ -60,7 +62,7 @@ Each grid size has its own saved board and **BEST** block record. Each board dou
 | **9×9** | Reach `2048` on `8×8` | 81 cells; great for practicing `16384` and `32768` chains. |
 | **10×10** | Reach `4096` on `9×9` | Ultimate 100-cell sandbox for chasing `65536` and beyond! |
 | **3×3 (Bonus)** | Reach `8192` on `10×10` | Tight 9-cell mastery challenge for extreme board planning! |
-| **2×2 (Extreme)** | Press **Activate 2×2** first, then reach `16384` on `10×10` | Ultra-tiny 4-cell chaos challenge—arm the button first! |
+| **2×2 (Extreme)** | Reach `512` on `3×3`, or press **Activate 2×2** first & reach `16384` on `10×10` | Ultra-tiny 4-cell chaos challenge—reach 512 on 3×3 or arm Activate 2×2 on 10×10! |
 | **100×100 (Mega)** | Reach `32` on `2×2` | Colossal 10,000-cell playground unlocked from 2×2 mastery! |
 
 ---
@@ -72,6 +74,8 @@ Each grid size has its own saved board and **BEST** block record. Each board dou
 - **Toggle Smash Mode**: `X` (then click any tile on the board)
 - **Toggle Swap Mode**: `C` (then click any two tiles on the board to swap them)
 - **Toggle Double Mode**: `V` (then click any tile on the board to double its value)
+- **Toggle Not Best Double Mode**: `Z` (then click any non-highest tile on the board)
+- **Toggle Tile Identifier Switch**: `I`
 - **Open / Close Guide Book**: `G`
 - **Start New Game**: `N`
-- **Cancel Smash / Close Modal**: `Escape`
+- **Cancel Power-Up / Close Modal**: `Escape`

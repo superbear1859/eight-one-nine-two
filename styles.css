@@ -724,6 +724,7 @@ body {
 .split-screen-wrapper[data-screen-count="4"] .smash-btn,
 .split-screen-wrapper[data-screen-count="4"] .swap-btn,
 .split-screen-wrapper[data-screen-count="4"] .double-btn,
+.split-screen-wrapper[data-screen-count="4"] .not-best-double-btn,
 .split-screen-wrapper[data-screen-count="4"] .split-btn,
 .split-screen-wrapper[data-screen-count="4"] .battle-btn,
 .split-screen-wrapper[data-screen-count="4"] .music-btn,
@@ -1138,6 +1139,7 @@ body {
 .smash-btn,
 .swap-btn,
 .double-btn,
+.not-best-double-btn,
 .split-btn,
 .battle-btn,
 .music-btn,
@@ -1152,6 +1154,7 @@ body {
 .smash-btn:hover:not(:disabled),
 .swap-btn:hover:not(:disabled),
 .double-btn:hover:not(:disabled),
+.not-best-double-btn:hover:not(:disabled),
 .split-btn:hover:not(:disabled),
 .battle-btn:hover:not(:disabled),
 .music-btn:hover:not(:disabled),
@@ -1186,7 +1189,8 @@ body {
 .undo-btn:disabled,
 .smash-btn:disabled,
 .swap-btn:disabled,
-.double-btn:disabled {
+.double-btn:disabled,
+.not-best-double-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -1218,6 +1222,16 @@ body {
 }
 
 .double-btn.active .double-badge {
+  background-color: rgba(0, 0, 0, 0.28);
+}
+
+.not-best-double-btn.active {
+  background: linear-gradient(135deg, #8b5cf6, #d946ef);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.55);
+}
+
+.not-best-double-btn.active .not-best-double-badge {
   background-color: rgba(0, 0, 0, 0.28);
 }
 
@@ -1367,9 +1381,14 @@ body {
   box-shadow: 0 0 0 3px #10b981, var(--shadow-soft);
 }
 
+.board-container.not-best-double-mode {
+  box-shadow: 0 0 0 3px #8b5cf6, var(--shadow-soft);
+}
+
 .board-container.smash-mode .tile-container,
 .board-container.swap-mode .tile-container,
-.board-container.double-mode .tile-container {
+.board-container.double-mode .tile-container,
+.board-container.not-best-double-mode .tile-container {
   pointer-events: auto;
 }
 
@@ -1378,7 +1397,8 @@ body {
 }
 
 .board-container.swap-mode .tile,
-.board-container.double-mode .tile {
+.board-container.double-mode .tile,
+.board-container.not-best-double-mode .tile {
   cursor: pointer;
 }
 
@@ -1410,6 +1430,32 @@ body {
   transform: scale(1.06);
   box-shadow: 0 0 0 3px #10b981, 0 0 18px rgba(16, 185, 129, 0.8);
   filter: brightness(1.08);
+}
+
+.board-container.not-best-double-mode .tile .tile-inner {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.7);
+}
+
+.board-container.not-best-double-mode .tile:hover:not(.is-highest-tile) .tile-inner {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px #8b5cf6, 0 0 18px rgba(139, 92, 246, 0.85);
+  filter: brightness(1.08);
+}
+
+/* Highest tile in not-best-double-mode: visually marked as excluded/locked */
+.board-container.not-best-double-mode .tile.is-highest-tile {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.board-container.not-best-double-mode .tile.is-highest-tile .tile-inner {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+.board-container.not-best-double-mode .tile.is-highest-tile:hover .tile-inner {
+  transform: scale(0.96);
+  box-shadow: 0 0 0 3px #ef4444, 0 0 14px rgba(239, 68, 68, 0.7);
+  filter: brightness(0.92);
 }
 
 .board-container.swap-mode .tile.swap-selected {
@@ -2584,6 +2630,7 @@ body {
   .smash-btn,
   .swap-btn,
   .double-btn,
+  .not-best-double-btn,
   .split-btn,
   .battle-btn,
   .music-btn,

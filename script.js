@@ -38,6 +38,8 @@ const INITIAL_SWAPS = 2;
 const MAX_SWAPS = 3;
 const INITIAL_DOUBLES = 1;
 const MAX_DOUBLES = 1;
+const INITIAL_NOT_BEST_DOUBLES = 2;
+const MAX_NOT_BEST_DOUBLES = 3;
 const MAX_HISTORY_LENGTH = 100;
 const SECRET_PASSWORD = 'superbearthegreat';
 const SECRET_POWERUP_AMOUNT = 100;
@@ -45,6 +47,7 @@ const MILESTONE_TILES = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 1
 const SMASH_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 const SWAP_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 const DOUBLE_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
+const NOT_BEST_DOUBLE_MILESTONE_TILES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
 
 const THEMES = [
   'light',
@@ -860,6 +863,8 @@ class Game8192 {
     this.swapCountEl = q('swap-count', 'swap-count');
     this.doubleBtn = q('double-btn', 'double-btn');
     this.doubleCountEl = q('double-count', 'double-count');
+    this.notBestDoubleBtn = q('not-best-double-btn', 'not-best-double-btn');
+    this.notBestDoubleCountEl = q('not-best-double-count', 'not-best-double-count');
     this.splitToggleBtn = q('split-toggle', 'split-toggle');
     this.splitLabelEl = q('split-label', 'split-label');
     this.battleToggleBtn = q('battle-toggle', 'battle-toggle');
@@ -891,6 +896,7 @@ class Game8192 {
     this.overlaySmashBtn = q('overlay-smash-btn', 'overlay-smash-btn');
     this.overlaySwapBtn = q('overlay-swap-btn', 'overlay-swap-btn');
     this.overlayDoubleBtn = q('overlay-double-btn', 'overlay-double-btn');
+    this.overlayNotBestDoubleBtn = q('overlay-not-best-double-btn', 'overlay-not-best-double-btn');
     this.tryAgainBtn = q('try-again-btn', 'try-again-btn');
 
     this.sizeButtons = Array.from(this.rootEl.querySelectorAll('.size-btn'));
@@ -933,10 +939,12 @@ class Game8192 {
     this.smashesRemaining = INITIAL_SMASHES;
     this.swapsRemaining = INITIAL_SWAPS;
     this.doublesRemaining = INITIAL_DOUBLES;
+    this.notBestDoublesRemaining = INITIAL_NOT_BEST_DOUBLES;
     this.powerupCapBroken = false;
     this.smashMode = false;
     this.swapMode = false;
     this.doubleMode = false;
+    this.notBestDoubleMode = false;
     this.swapFirstTile = null;
     this.unlockedMilestones = [];
     this.history = [];
@@ -1317,6 +1325,7 @@ class Game8192 {
     this.setSmashMode(false);
     this.setSwapMode(false);
     this.setDoubleMode(false);
+    this.setNotBestDoubleMode(false);
     if (saveCurrentFirst && this.grid.length > 0) {
       this.saveState();
     }
@@ -1389,12 +1398,14 @@ class Game8192 {
     this.setSmashMode(false);
     this.setSwapMode(false);
     this.setDoubleMode(false);
+    this.setNotBestDoubleMode(false);
     this.grid = Array.from({ length: this.size }, () => Array(this.size).fill(null));
     this.score = 0;
     this.undosRemaining = INITIAL_UNDOS;
     this.smashesRemaining = INITIAL_SMASHES;
     this.swapsRemaining = INITIAL_SWAPS;
     this.doublesRemaining = INITIAL_DOUBLES;
+    this.notBestDoublesRemaining = INITIAL_NOT_BEST_DOUBLES;
     this.powerupCapBroken = false;
     this.unlockedMilestones = [];
     this.history = [];
@@ -1434,6 +1445,7 @@ class Game8192 {
       smashesRemaining: this.smashesRemaining,
       swapsRemaining: this.swapsRemaining,
       doublesRemaining: this.doublesRemaining,
+      notBestDoublesRemaining: this.notBestDoublesRemaining,
       powerupCapBroken: this.powerupCapBroken,
       unlockedMilestones: this.unlockedMilestones,
       history: serializedHistory,
@@ -1470,13 +1482,21 @@ class Game8192 {
         typeof data.swapsRemaining === 'number' ? data.swapsRemaining : INITIAL_SWAPS;
       this.doublesRemaining =
         typeof data.doublesRemaining === 'number' ? data.doublesRemaining : INITIAL_DOUBLES;
+      this.notBestDoublesRemaining =
+        typeof data.notBestDoublesRemaining === 'number'
+          ? data.notBestDoublesRemaining
+          : INITIAL_NOT_BEST_DOUBLES;
       this.powerupCapBroken =
         Boolean(data.powerupCapBroken) ||
         this.undosRemaining > MAX_UNDOS ||
         this.smashesRemaining > MAX_SMASHES ||
-        this.swapsRemaining > MAX_SWAPS;
+        this.swapsRemaining > MAX_SWAPS ||
+        this.notBestDoublesRemaining > MAX_NOT_BEST_DOUBLES;
       if (!this.powerupCapBroken && this.doublesRemaining > MAX_DOUBLES) {
         this.doublesRemaining = MAX_DOUBLES;
+      }
+      if (!this.powerupCapBroken && this.notBestDoublesRemaining > MAX_NOT_BEST_DOUBLES) {
+        this.notBestDoublesRemaining = MAX_NOT_BEST_DOUBLES;
       }
       this.unlockedMilestones = Array.isArray(data.unlockedMilestones)
         ? data.unlockedMilestones
@@ -1775,11 +1795,21 @@ class Game8192 {
           this.pulseDoubleBadge();
         }
 
+        const isNotBestDoubleMilestone = NOT_BEST_DOUBLE_MILESTONE_TILES.includes(val);
+        const gainedNotBestDouble =
+          isNotBestDoubleMilestone &&
+          (this.powerupCapBroken || this.notBestDoublesRemaining < MAX_NOT_BEST_DOUBLES);
+        if (gainedNotBestDouble) {
+          this.notBestDoublesRemaining++;
+          this.pulseNotBestDoubleBadge();
+        }
+
         const rewards = [];
         if (gainedUndo) rewards.push('+1 Undo');
         if (gainedSmash) rewards.push('+1 Smash');
         if (gainedSwap) rewards.push('+1 Swap');
         if (gainedDouble) rewards.push('+1 Double');
+        if (gainedNotBestDouble) rewards.push('+1 Not Best Double');
 
         if (rewards.length > 0) {
           earnedPowerup = true;
@@ -1843,6 +1873,9 @@ class Game8192 {
     if (active && this.doubleMode) {
       this.setDoubleMode(false);
     }
+    if (active && this.notBestDoubleMode) {
+      this.setNotBestDoubleMode(false);
+    }
     this.smashMode = Boolean(active);
     this.boardContainer.classList.toggle('smash-mode', this.smashMode);
     if (this.smashBtn) {
@@ -1874,6 +1907,9 @@ class Game8192 {
     if (active && this.swapMode) {
       this.setSwapMode(false);
     }
+    if (active && this.notBestDoubleMode) {
+      this.setNotBestDoubleMode(false);
+    }
     this.doubleMode = Boolean(active);
     this.boardContainer.classList.toggle('double-mode', this.doubleMode);
     if (this.doubleBtn) {
@@ -1894,6 +1930,87 @@ class Game8192 {
     this.setDoubleMode(!this.doubleMode);
   }
 
+  hasNonBestTiles() {
+    const highest = this.getHighestTileOnBoard();
+    if (highest <= 0) return false;
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        const tile = this.grid[r] && this.grid[r][c];
+        if (tile && tile.value < highest) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  setNotBestDoubleMode(active) {
+    if (
+      active &&
+      (this.battlePaused || this.notBestDoublesRemaining <= 0 || !this.hasNonBestTiles())
+    ) {
+      if (active && !this.hasNonBestTiles()) {
+        const maxVal = this.getHighestTileOnBoard();
+        this.showToast(
+          maxVal > 0
+            ? `No smaller tiles to double! All tiles on the board are your highest tile (${maxVal}).`
+            : 'No tiles on the board to double!'
+        );
+      }
+      return;
+    }
+    if (active && this.smashMode) {
+      this.setSmashMode(false);
+    }
+    if (active && this.swapMode) {
+      this.setSwapMode(false);
+    }
+    if (active && this.doubleMode) {
+      this.setDoubleMode(false);
+    }
+    this.notBestDoubleMode = Boolean(active);
+    this.boardContainer.classList.toggle('not-best-double-mode', this.notBestDoubleMode);
+    if (this.notBestDoubleBtn) {
+      this.notBestDoubleBtn.classList.toggle('active', this.notBestDoubleMode);
+    }
+    this.syncHighestTileMarkers();
+    if (this.identifierEnabled && this.lastHoverCell) {
+      this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
+    }
+    if (this.notBestDoubleMode) {
+      this.overlay.classList.add('hidden');
+      const maxVal = this.getHighestTileOnBoard();
+      this.showToast(`Not Best Double: Click any tile EXCEPT your highest (${maxVal}) to 2× it!`);
+    } else {
+      this.updateUI();
+    }
+  }
+
+  toggleNotBestDoubleMode() {
+    this.setNotBestDoubleMode(!this.notBestDoubleMode);
+  }
+
+  syncHighestTileMarkers() {
+    const maxVal = this.getHighestTileOnBoard();
+    Array.from(this.tileContainer.querySelectorAll('.tile')).forEach((el) => {
+      const r = parseInt(el.getAttribute('data-row'), 10);
+      const c = parseInt(el.getAttribute('data-col'), 10);
+      const tile = this.grid[r] && this.grid[r][c];
+      const isHighest = tile && tile.value >= maxVal;
+      el.classList.toggle('is-highest-tile', Boolean(this.notBestDoubleMode && isHighest));
+    });
+  }
+
+  pulseNotBestDoubleBadge() {
+    if (!this.notBestDoubleCountEl) return;
+    this.notBestDoubleCountEl.classList.add('pulse');
+    setTimeout(() => {
+      if (this.notBestDoubleCountEl) {
+        this.notBestDoubleCountEl.classList.remove('pulse');
+      }
+    }, 600);
+  }
+
   clearSwapSelectionHighlight() {
     Array.from(this.tileContainer.querySelectorAll('.swap-selected')).forEach((el) => {
       el.classList.remove('swap-selected');
@@ -1909,6 +2026,9 @@ class Game8192 {
     }
     if (active && this.doubleMode) {
       this.setDoubleMode(false);
+    }
+    if (active && this.notBestDoubleMode) {
+      this.setNotBestDoubleMode(false);
     }
     this.swapMode = Boolean(active);
     this.swapFirstTile = null;
@@ -2134,12 +2254,98 @@ class Game8192 {
     this.updateUI();
   }
 
+  notBestDoubleTileAt(r, c) {
+    if (this.battlePaused || !this.notBestDoubleMode || this.notBestDoublesRemaining <= 0) return;
+    const targetTile = this.grid[r] && this.grid[r][c];
+    if (!targetTile) return;
+
+    const maxVal = this.getHighestTileOnBoard();
+    if (targetTile.value >= maxVal) {
+      if (this.sound && this.sound.playBump) {
+        this.sound.playBump();
+      }
+      this.showToast(
+        `🚫 Cannot double your highest tile (${maxVal}) with Not Best Double! Use regular Double, or choose a smaller tile.`
+      );
+      return;
+    }
+
+    // Save snapshot so Undo can revert a Not Best Double if desired
+    const preSnapshot = {
+      grid: this.serializeGridValues(),
+      score: this.score,
+      unlockedMilestones: [...this.unlockedMilestones],
+      won: this.won,
+      keepPlaying: this.keepPlaying,
+    };
+    this.pushHistorySnapshot(preSnapshot);
+
+    // Clear previous animation flags
+    for (let row = 0; row < this.size; row++) {
+      for (let col = 0; col < this.size; col++) {
+        const t = this.grid[row][col];
+        if (t) {
+          t.isNew = false;
+          t.mergedFrom = null;
+        }
+      }
+    }
+
+    const newVal = targetTile.value * 2;
+    targetTile.value = newVal;
+    targetTile.mergedFrom = []; // Triggers pop animation without ghost tiles
+
+    this.notBestDoublesRemaining--;
+    this.score += newVal;
+    this.triggerScoreAddition(newVal);
+    this.over = false;
+
+    let justWon = false;
+    let unlockedNewGrid = false;
+
+    if (newVal >= WIN_TARGET && !this.won) {
+      this.won = true;
+      justWon = true;
+    }
+
+    // Using a power-up does not grant new power-up charges
+    if (MILESTONE_TILES.includes(newVal) && !this.unlockedMilestones.includes(newVal)) {
+      this.unlockedMilestones.push(newVal);
+      this.showToast(`New ${newVal} tile unlocked!`);
+    }
+
+    this.updateBestFromGrid();
+
+    if (this.checkGridUnlock(newVal)) {
+      unlockedNewGrid = true;
+    }
+
+    if (justWon) {
+      this.sound.playWinFanfare();
+    } else if (unlockedNewGrid) {
+      this.sound.playMilestone();
+    } else {
+      this.sound.playDouble();
+    }
+
+    this.setNotBestDoubleMode(false);
+
+    if (!this.hasMovesAvailable()) {
+      this.over = true;
+    }
+
+    this.saveState();
+    this.renderBoard(false);
+    this.updateUI();
+  }
+
   undo() {
     if (this.battlePaused || this.undosRemaining <= 0 || this.history.length === 0) return;
 
     this.setSmashMode(false);
     this.setSwapMode(false);
     this.setDoubleMode(false);
+    this.setNotBestDoubleMode(false);
 
     const prev = this.history.pop();
     this.undosRemaining--;
@@ -2250,6 +2456,10 @@ class Game8192 {
         this.tileContainer.removeChild(child);
       }
     });
+
+    if (this.notBestDoubleMode) {
+      this.syncHighestTileMarkers();
+    }
 
     if (this.identifierEnabled && this.lastHoverCell) {
       this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
@@ -2564,6 +2774,18 @@ class Game8192 {
             ? `✖️2 Double to ${tile.value * 2}`
             : 'Select a tile to double';
           this.grid100TooltipAction.classList.remove('hidden');
+        } else if (this.notBestDoubleMode) {
+          const maxVal = this.getHighestTileOnBoard();
+          if (tile) {
+            if (tile.value >= maxVal) {
+              this.grid100TooltipAction.textContent = `🚫 Highest tile (${tile.value})! Cannot double`;
+            } else {
+              this.grid100TooltipAction.textContent = `✖️2 Not Best: Double to ${tile.value * 2}`;
+            }
+          } else {
+            this.grid100TooltipAction.textContent = 'Select a non-highest tile';
+          }
+          this.grid100TooltipAction.classList.remove('hidden');
         } else {
           this.grid100TooltipAction.classList.add('hidden');
         }
@@ -2571,7 +2793,8 @@ class Game8192 {
 
       // Position tooltip near cursor clamped to board boundaries
       const tipWidth = 190;
-      const tipHeight = this.smashMode || this.swapMode || this.doubleMode ? 72 : 54;
+      const tipHeight =
+        this.smashMode || this.swapMode || this.doubleMode || this.notBestDoubleMode ? 72 : 54;
       let tipX = clientX - boardRect.left - tipWidth / 2;
       tipX = Math.max(6, Math.min(boardRect.width - tipWidth - 6, tipX));
 
@@ -2588,7 +2811,15 @@ class Game8192 {
     // 3. Update HUD Bar text
     if (this.grid100HudText) {
       if (tile) {
-        this.grid100HudText.textContent = `Hovering: Tile ${tile.value} at Row ${row + 1}, Col ${col + 1}`;
+        let extra = '';
+        if (this.notBestDoubleMode) {
+          const maxVal = this.getHighestTileOnBoard();
+          extra =
+            tile.value >= maxVal
+              ? ' (Highest — cannot double)'
+              : ` (Double to ${tile.value * 2})`;
+        }
+        this.grid100HudText.textContent = `Hovering: Tile ${tile.value} at Row ${row + 1}, Col ${col + 1}${extra}`;
       } else {
         this.grid100HudText.textContent = `Hovering: Empty cell at Row ${row + 1}, Col ${col + 1}`;
       }
@@ -2619,8 +2850,15 @@ class Game8192 {
       this.doubleBtn.classList.toggle('active', this.doubleMode);
     }
 
+    if (this.notBestDoubleCountEl && this.notBestDoubleBtn) {
+      this.notBestDoubleCountEl.textContent = String(this.notBestDoublesRemaining);
+      this.notBestDoubleBtn.disabled =
+        this.notBestDoublesRemaining <= 0 || !this.hasNonBestTiles();
+      this.notBestDoubleBtn.classList.toggle('active', this.notBestDoubleMode);
+    }
+
     // Overlay handling
-    if (this.smashMode || this.swapMode || this.doubleMode) {
+    if (this.smashMode || this.swapMode || this.doubleMode || this.notBestDoubleMode) {
       this.overlay.classList.add('hidden');
       return;
     }
@@ -2638,6 +2876,7 @@ class Game8192 {
       if (this.overlaySmashBtn) this.overlaySmashBtn.classList.add('hidden');
       if (this.overlaySwapBtn) this.overlaySwapBtn.classList.add('hidden');
       if (this.overlayDoubleBtn) this.overlayDoubleBtn.classList.add('hidden');
+      if (this.overlayNotBestDoubleBtn) this.overlayNotBestDoubleBtn.classList.add('hidden');
     } else if (this.over) {
       this.overlay.classList.remove('hidden');
       this.overlay.classList.remove('win-state');
@@ -2646,8 +2885,9 @@ class Game8192 {
       const canSmash = this.smashesRemaining > 0 && this.getTileCount() > 1;
       const canSwap = this.swapsRemaining > 0 && this.getTileCount() >= 2;
       const canDouble = this.doublesRemaining > 0 && this.getTileCount() >= 1;
+      const canNotBestDouble = this.notBestDoublesRemaining > 0 && this.hasNonBestTiles();
       this.overlayMessage.textContent =
-        canUndo || canSmash || canSwap || canDouble
+        canUndo || canSmash || canSwap || canDouble || canNotBestDouble
           ? 'No more moves—use a Power-Up or start fresh!'
           : 'No more moves available.';
       this.keepGoingBtn.classList.add('hidden');
@@ -2660,6 +2900,9 @@ class Game8192 {
       }
       if (this.overlayDoubleBtn) {
         this.overlayDoubleBtn.classList.toggle('hidden', !canDouble);
+      }
+      if (this.overlayNotBestDoubleBtn) {
+        this.overlayNotBestDoubleBtn.classList.toggle('hidden', !canNotBestDouble);
       }
     } else {
       this.overlay.classList.add('hidden');
@@ -2729,6 +2972,7 @@ class Game8192 {
     this.setSmashMode(false);
     this.setSwapMode(false);
     this.setDoubleMode(false);
+    this.setNotBestDoubleMode(false);
     this.secretModal.classList.remove('hidden');
     if (this.secretForm) {
       this.secretForm.classList.remove('hidden');
@@ -2790,7 +3034,7 @@ class Game8192 {
     if (choice === 'grids') {
       this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10 + 3×3, 2×2 & 100×100) unlocked!');
     } else if (choice === 'powerups') {
-      this.showToast('🐻 SUPERBEAR UNLOCKED! 100 of every Power-Up (Undo, Smash, Swap & Double)!');
+      this.showToast('🐻 SUPERBEAR UNLOCKED! 100 of every Power-Up (Undo, Smash, Swap, Double & Not Best Double)!');
     } else {
       this.showToast('🐻 SUPERBEAR UNLOCKED! All grids (4×4–10×10 + 3×3, 2×2 & 100×100) & 100 of every Power-Up!');
     }
@@ -2818,10 +3062,12 @@ class Game8192 {
       this.smashesRemaining = SECRET_POWERUP_AMOUNT;
       this.swapsRemaining = SECRET_POWERUP_AMOUNT;
       this.doublesRemaining = SECRET_POWERUP_AMOUNT;
+      this.notBestDoublesRemaining = SECRET_POWERUP_AMOUNT;
       this.pulseUndoBadge();
       this.pulseSmashBadge();
       this.pulseSwapBadge();
       this.pulseDoubleBadge();
+      this.pulseNotBestDoubleBadge();
     }
 
     this.saveState();
@@ -2904,9 +3150,16 @@ class Game8192 {
       this.overlayDoubleBtn.addEventListener('click', () => this.setDoubleMode(true));
     }
 
-    // Click on a tile when Smash Mode, Swap Mode, or Double Mode is active
+    if (this.notBestDoubleBtn) {
+      this.notBestDoubleBtn.addEventListener('click', () => this.toggleNotBestDoubleMode());
+    }
+    if (this.overlayNotBestDoubleBtn) {
+      this.overlayNotBestDoubleBtn.addEventListener('click', () => this.setNotBestDoubleMode(true));
+    }
+
+    // Click on a tile when Smash Mode, Swap Mode, Double Mode, or Not Best Double Mode is active
     this.tileContainer.addEventListener('click', (e) => {
-      if (!this.smashMode && !this.swapMode && !this.doubleMode) return;
+      if (!this.smashMode && !this.swapMode && !this.doubleMode && !this.notBestDoubleMode) return;
       const tileEl = e.target.closest('.tile');
       if (!tileEl) return;
       const r = parseInt(tileEl.getAttribute('data-row'), 10);
@@ -2919,6 +3172,8 @@ class Game8192 {
           this.handleSwapTileClick(r, c);
         } else if (this.doubleMode) {
           this.doubleTileAt(r, c);
+        } else if (this.notBestDoubleMode) {
+          this.notBestDoubleTileAt(r, c);
         }
       }
     });
@@ -3135,6 +3390,9 @@ class Game8192 {
         } else if (e.code === 'KeyV') {
           e.preventDefault();
           game1.toggleDoubleMode();
+        } else if (e.code === 'KeyZ') {
+          e.preventDefault();
+          game1.toggleNotBestDoubleMode();
         } else if (e.code === 'KeyP') {
           e.preventDefault();
           if (typeof window.toggleSplitScreen === 'function') {
@@ -3166,11 +3424,12 @@ class Game8192 {
         } else if (e.code === 'Escape') {
           const games = Array.isArray(window.games8192) ? window.games8192 : [this];
           games.forEach((g) => {
-            if (g.smashMode || g.swapMode || g.doubleMode) {
+            if (g.smashMode || g.swapMode || g.doubleMode || g.notBestDoubleMode) {
               e.preventDefault();
               g.setSmashMode(false);
               g.setSwapMode(false);
               g.setDoubleMode(false);
+              g.setNotBestDoubleMode(false);
             }
           });
         } else if (e.code === 'KeyN') {
@@ -3314,7 +3573,7 @@ class Game8192 {
 
     // Board click support for power-up interactions on every level
     this.boardContainer.addEventListener('click', (e) => {
-      if (!this.smashMode && !this.swapMode && !this.doubleMode) return;
+      if (!this.smashMode && !this.swapMode && !this.doubleMode && !this.notBestDoubleMode) return;
       const cellInfo = this.getCellFromPointer(e.clientX, e.clientY);
       if (!cellInfo) return;
       const { row, col } = cellInfo;
@@ -3327,6 +3586,8 @@ class Game8192 {
         this.handleSwapTileClick(row, col);
       } else if (this.doubleMode) {
         this.doubleTileAt(row, col);
+      } else if (this.notBestDoubleMode) {
+        this.notBestDoubleTileAt(row, col);
       }
     });
   }
@@ -3624,6 +3885,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (g.smashMode) g.setSmashMode(false);
       if (g.swapMode) g.setSwapMode(false);
       if (g.doubleMode) g.setDoubleMode(false);
+      if (g.notBestDoubleMode) g.setNotBestDoubleMode(false);
       g.updateUI();
     });
 
