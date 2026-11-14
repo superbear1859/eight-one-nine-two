@@ -3129,28 +3129,40 @@ class Game8192 {
       this.smashBtn.addEventListener('click', () => this.toggleSmashMode());
     }
     if (this.overlaySmashBtn) {
-      this.overlaySmashBtn.addEventListener('click', () => this.setSmashMode(true));
+      this.overlaySmashBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setSmashMode(true);
+      });
     }
 
     if (this.swapBtn) {
       this.swapBtn.addEventListener('click', () => this.toggleSwapMode());
     }
     if (this.overlaySwapBtn) {
-      this.overlaySwapBtn.addEventListener('click', () => this.setSwapMode(true));
+      this.overlaySwapBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setSwapMode(true);
+      });
     }
 
     if (this.doubleBtn) {
       this.doubleBtn.addEventListener('click', () => this.toggleDoubleMode());
     }
     if (this.overlayDoubleBtn) {
-      this.overlayDoubleBtn.addEventListener('click', () => this.setDoubleMode(true));
+      this.overlayDoubleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setDoubleMode(true);
+      });
     }
 
     if (this.notBestDoubleBtn) {
       this.notBestDoubleBtn.addEventListener('click', () => this.toggleNotBestDoubleMode());
     }
     if (this.overlayNotBestDoubleBtn) {
-      this.overlayNotBestDoubleBtn.addEventListener('click', () => this.setNotBestDoubleMode(true));
+      this.overlayNotBestDoubleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setNotBestDoubleMode(true);
+      });
     }
 
     // Click on a tile when Smash Mode, Swap Mode, Double Mode, or Not Best Double Mode is active
@@ -3570,6 +3582,7 @@ class Game8192 {
     // Board click support for power-up interactions on every level
     this.boardContainer.addEventListener('click', (e) => {
       if (!this.smashMode && !this.swapMode && !this.doubleMode && !this.notBestDoubleMode) return;
+      if (e.target && typeof e.target.closest === 'function' && e.target.closest('.game-overlay')) return;
       const cellInfo = this.getCellFromPointer(e.clientX, e.clientY);
       if (!cellInfo) return;
       const { row, col } = cellInfo;
