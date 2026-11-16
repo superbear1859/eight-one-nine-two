@@ -1591,6 +1591,27 @@ body {
   border: 1.5px dashed rgba(119, 110, 101, 0.45);
 }
 
+.tile-powerup-double .tile-inner {
+  background: linear-gradient(135deg, #06b6d4 0%, #6366f1 50%, #a855f7 100%);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.55), inset 0 0 10px rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  animation: powerup-tile-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes powerup-tile-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(99, 102, 241, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.25);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(168, 85, 247, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.4);
+    transform: scale(1.03);
+  }
+}
+
 .tile-2 .tile-inner {
   background: #eee4da;
   color: #776e65;

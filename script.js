@@ -41,6 +41,8 @@ const MAX_DOUBLES = 1;
 const INITIAL_NOT_BEST_DOUBLES = 2;
 const MAX_NOT_BEST_DOUBLES = 3;
 const MAX_HISTORY_LENGTH = 100;
+const BOARD_DOUBLE_POWERUP_CHANCE = 0.12;
+const BOARD_DOUBLE_POWERUP_SERIALIZED = -1;
 const SECRET_PASSWORD = 'superbearthegreat';
 const SECRET_POWERUP_AMOUNT = 100;
 const MILESTONE_TILES = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
@@ -1375,7 +1377,7 @@ class Game8192 {
     for (let r = 0; r < this.size; r++) {
       for (let c = 0; c < this.size; c++) {
         const tile = this.grid[r] && this.grid[r][c];
-        if (tile && tile.value > maxTile) {
+        if (tile && !tile.isPowerup && tile.value > maxTile) {
           maxTile = tile.value;
         }
       }
@@ -1423,7 +1425,15 @@ class Game8192 {
     const serializedGrid =
       this.size > 16
         ? this.serializeGridValues()
-        : this.grid.map((row) => row.map((tile) => (tile ? { value: tile.value } : null)));
+        : this.grid.map((row) =>
+            row.map((tile) =>
+              tile
+                ? tile.isPowerup
+                  ? { isPowerup: true, powerupType: 'double', value: 0 }
+                  : { value: tile.value }
+                : null
+            )
+          );
 
     const serializedHistory = this.history.map((snap) => ({
       grid: snap.grid,
@@ -1560,20 +1570,56 @@ class Game8192 {
     return tile;
   }
 
+  hasPowerupOnBoard() {
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        const tile = this.grid[r] && this.grid[r][c];
+        if (tile && tile.isPowerup) return true;
+      }
+    }
+    return false;
+  }
+
+  spawnBoardDoublePowerup() {
+    const empty = this.getEmptyCells();
+    if (empty.length === 0) return null;
+
+    const { r, c } = empty[Math.floor(Math.random() * empty.length)];
+    const tile = {
+      id: this.nextTileId++,
+      value: 0,
+      isPowerup: true,
+      powerupType: 'double',
+      row: r,
+      col: c,
+      isNew: true,
+      mergedFrom: null,
+    };
+
+    this.grid[r][c] = tile;
+    return tile;
+  }
+
   serializeGridValues() {
     if (this.size > 16) {
       const tiles = [];
       for (let r = 0; r < this.size; r++) {
         for (let c = 0; c < this.size; c++) {
           const tile = this.grid[r] && this.grid[r][c];
-          if (tile && tile.value > 0) {
+          if (tile && tile.isPowerup) {
+            tiles.push([r, c, BOARD_DOUBLE_POWERUP_SERIALIZED]);
+          } else if (tile && tile.value > 0) {
             tiles.push([r, c, tile.value]);
           }
         }
       }
       return { sparse: true, tiles };
     }
-    return this.grid.map((row) => row.map((tile) => (tile ? tile.value : 0)));
+    return this.grid.map((row) =>
+      row.map((tile) =>
+        tile ? (tile.isPowerup ? BOARD_DOUBLE_POWERUP_SERIALIZED : tile.value) : 0
+      )
+    );
   }
 
   buildGridFromSerialized(encoded) {
@@ -1586,13 +1632,28 @@ class Game8192 {
       mergedFrom: null,
     });
 
+    const makePowerupTile = (r, c) => ({
+      id: this.nextTileId++,
+      value: 0,
+      isPowerup: true,
+      powerupType: 'double',
+      row: r,
+      col: c,
+      isNew: false,
+      mergedFrom: null,
+    });
+
     const restored = Array.from({ length: this.size }, () => Array(this.size).fill(null));
     if (encoded && encoded.sparse && Array.isArray(encoded.tiles)) {
       for (const entry of encoded.tiles) {
         if (!Array.isArray(entry) || entry.length < 3) continue;
         const [r, c, val] = entry;
-        if (r >= 0 && r < this.size && c >= 0 && c < this.size && val > 0) {
-          restored[r][c] = makeTile(r, c, val);
+        if (r >= 0 && r < this.size && c >= 0 && c < this.size) {
+          if (val === BOARD_DOUBLE_POWERUP_SERIALIZED) {
+            restored[r][c] = makePowerupTile(r, c);
+          } else if (val > 0) {
+            restored[r][c] = makeTile(r, c, val);
+          }
         }
       }
       return restored;
@@ -1604,9 +1665,15 @@ class Game8192 {
       if (!Array.isArray(row)) continue;
       for (let c = 0; c < Math.min(row.length, this.size); c++) {
         const cell = row[c];
+        if (cell && cell.isPowerup) {
+          restored[r][c] = makePowerupTile(r, c);
+          continue;
+        }
         const val =
           typeof cell === 'number' ? cell : cell && typeof cell.value === 'number' ? cell.value : 0;
-        if (val > 0) {
+        if (val === BOARD_DOUBLE_POWERUP_SERIALIZED) {
+          restored[r][c] = makePowerupTile(r, c);
+        } else if (val > 0) {
           restored[r][c] = makeTile(r, c, val);
         }
       }
@@ -1674,12 +1741,13 @@ class Game8192 {
     let moved = false;
     let scoreDelta = 0;
     let maxMergedValue = 0;
+    let doubledByPowerupValue = 0;
     const newlyCreatedValues = [];
 
     for (const r of rowOrder) {
       for (const c of colOrder) {
         const tile = this.grid[r][c];
-        if (!tile) continue;
+        if (!tile || tile.isPowerup) continue;
 
         let targetR = r;
         let targetC = c;
@@ -1704,7 +1772,30 @@ class Game8192 {
             ? this.grid[nextR][nextC]
             : null;
 
-        if (obstacle && obstacle.value === tile.value && !obstacle.mergedFrom) {
+        if (obstacle && obstacle.isPowerup) {
+          // Tile runs into the 2x power-up: double the tile's value and consume the power-up
+          const doubledValue = tile.value * 2;
+          this.grid[r][c] = null;
+
+          tile.row = nextR;
+          tile.col = nextC;
+
+          const doubledTile = {
+            id: this.nextTileId++,
+            value: doubledValue,
+            row: nextR,
+            col: nextC,
+            isNew: false,
+            mergedFrom: [tile, obstacle],
+          };
+
+          this.grid[nextR][nextC] = doubledTile;
+          moved = true;
+          scoreDelta += doubledValue;
+          maxMergedValue = Math.max(maxMergedValue, doubledValue);
+          doubledByPowerupValue = Math.max(doubledByPowerupValue, doubledValue);
+          newlyCreatedValues.push(doubledValue);
+        } else if (obstacle && !obstacle.isPowerup && obstacle.value === tile.value && !obstacle.mergedFrom) {
           // Merge into obstacle position
           const mergedValue = tile.value * 2;
           this.grid[r][c] = null;
@@ -1818,8 +1909,12 @@ class Game8192 {
     }
 
     // Spawn new tile only once the starting two 1s have been put together
+    let spawnedBoardPowerup = false;
     if (!this.hasUnmergedOnes()) {
       this.spawnRandomTile();
+      if (!this.hasPowerupOnBoard() && Math.random() < BOARD_DOUBLE_POWERUP_CHANCE) {
+        spawnedBoardPowerup = Boolean(this.spawnBoardDoublePowerup());
+      }
     }
     this.updateBestFromGrid();
 
@@ -1833,15 +1928,22 @@ class Game8192 {
       this.over = true;
     }
 
-    // Play audio
+    // Play audio & feedback
     if (justWon) {
       this.sound.playWinFanfare();
     } else if (earnedPowerup) {
       this.sound.playMilestone();
+    } else if (doubledByPowerupValue > 0) {
+      this.sound.playDouble();
+      this.showToast(`⚡ 2× Power-Up! Tile doubled to ${doubledByPowerupValue}!`);
     } else if (maxMergedValue > 0) {
       this.sound.playMerge(maxMergedValue);
     } else {
       this.sound.playSlide();
+    }
+
+    if (spawnedBoardPowerup && !justWon && !earnedPowerup && doubledByPowerupValue === 0) {
+      this.showToast('⚡ A 2× Power-Up tile appeared on the board!');
     }
 
     this.saveState();
@@ -1932,7 +2034,7 @@ class Game8192 {
     for (let r = 0; r < this.size; r++) {
       for (let c = 0; c < this.size; c++) {
         const tile = this.grid[r] && this.grid[r][c];
-        if (tile && tile.value < highest) {
+        if (tile && !tile.isPowerup && tile.value < highest) {
           return true;
         }
       }
@@ -2180,6 +2282,10 @@ class Game8192 {
     if (this.battlePaused || !this.doubleMode || this.doublesRemaining <= 0) return;
     const targetTile = this.grid[r] && this.grid[r][c];
     if (!targetTile) return;
+    if (targetTile.isPowerup) {
+      this.showToast('Cannot double a 2× Power-Up tile!');
+      return;
+    }
 
     // Save snapshot so Undo can revert a Double if desired
     const preDoubleSnapshot = {
@@ -2254,6 +2360,10 @@ class Game8192 {
     if (this.battlePaused || !this.notBestDoubleMode || this.notBestDoublesRemaining <= 0) return;
     const targetTile = this.grid[r] && this.grid[r][c];
     if (!targetTile) return;
+    if (targetTile.isPowerup) {
+      this.showToast('Cannot double a 2× Power-Up tile!');
+      return;
+    }
 
     const maxVal = this.getHighestTileOnBoard();
     if (targetTile.value >= maxVal) {
@@ -2369,9 +2479,19 @@ class Game8192 {
         const current = this.grid[r][c];
         if (!current) return true;
         const down = r + 1 < this.size ? this.grid[r + 1][c] : undefined;
-        if (down && down.value === current.value) return true;
+        if (
+          down &&
+          ((down.isPowerup !== current.isPowerup) || (!down.isPowerup && down.value === current.value))
+        ) {
+          return true;
+        }
         const right = c + 1 < this.size ? this.grid[r][c + 1] : undefined;
-        if (right && right.value === current.value) return true;
+        if (
+          right &&
+          ((right.isPowerup !== current.isPowerup) || (!right.isPowerup && right.value === current.value))
+        ) {
+          return true;
+        }
       }
     }
     return false;
@@ -2392,22 +2512,28 @@ class Game8192 {
       activeDomIds.add(domId);
 
       let el = document.getElementById(domId);
-      const digits = String(tileObj.value).length;
-      const tierClass = tileObj.value <= 8192 ? `tile-${tileObj.value}` : 'tile-super';
-      const digitClass = digits >= 3 ? `tile-digits-${Math.min(digits, 5)}` : '';
+      const isPowerup = Boolean(tileObj.isPowerup);
+      const labelText = isPowerup ? '2×' : String(tileObj.value);
+      const digits = labelText.length;
+      const tierClass = isPowerup
+        ? 'tile-powerup-double'
+        : tileObj.value <= 8192
+          ? `tile-${tileObj.value}`
+          : 'tile-super';
+      const digitClass = !isPowerup && digits >= 3 ? `tile-digits-${Math.min(digits, 5)}` : '';
 
       if (!el) {
         el = document.createElement('div');
         el.id = domId;
         const inner = document.createElement('div');
         inner.className = 'tile-inner';
-        inner.textContent = String(tileObj.value);
+        inner.textContent = labelText;
         el.appendChild(inner);
         this.tileContainer.appendChild(el);
       } else {
         const inner = el.querySelector('.tile-inner');
-        if (inner && inner.textContent !== String(tileObj.value)) {
-          inner.textContent = String(tileObj.value);
+        if (inner && inner.textContent !== labelText) {
+          inner.textContent = labelText;
         }
       }
 
@@ -2723,7 +2849,15 @@ class Game8192 {
 
     // 2. Update Tooltip Content & Chip
     if (this.grid100Tooltip) {
-      if (tile) {
+      if (tile && tile.isPowerup) {
+        if (this.grid100TooltipChip) {
+          this.grid100TooltipChip.className = 'grid-100-tooltip-chip tile tile-powerup-double';
+          this.grid100TooltipChip.innerHTML = '<div class="tile-inner">2×</div>';
+        }
+        if (this.grid100TooltipTitle) {
+          this.grid100TooltipTitle.textContent = '2× Power-Up';
+        }
+      } else if (tile) {
         const valStr = String(tile.value);
         const tierClass = tile.value <= 8192 ? `tile-${tile.value}` : 'tile-super';
         const digitClass = valStr.length >= 4 ? `tile-digits-${Math.min(valStr.length, 5)}` : '';
@@ -2751,29 +2885,36 @@ class Game8192 {
       if (this.grid100TooltipAction) {
         if (this.smashMode) {
           this.grid100TooltipAction.textContent = tile
-            ? `🔨 Click to smash tile ${tile.value}`
+            ? tile.isPowerup
+              ? '🔨 Click to smash 2× Power-Up'
+              : `🔨 Click to smash tile ${tile.value}`
             : 'Select a tile to smash';
           this.grid100TooltipAction.classList.remove('hidden');
         } else if (this.swapMode) {
-          const firstVal =
+          const firstTile =
             this.swapFirstTile &&
             this.grid[this.swapFirstTile.r] &&
             this.grid[this.swapFirstTile.r][this.swapFirstTile.c]
-              ? this.grid[this.swapFirstTile.r][this.swapFirstTile.c].value
+              ? this.grid[this.swapFirstTile.r][this.swapFirstTile.c]
               : null;
-          this.grid100TooltipAction.textContent = firstVal
-            ? `🔄 Swap with (${firstVal})`
+          const firstLabel = firstTile ? (firstTile.isPowerup ? '2×' : firstTile.value) : null;
+          this.grid100TooltipAction.textContent = firstLabel
+            ? `🔄 Swap with (${firstLabel})`
             : '🔄 Click to select 1st tile';
           this.grid100TooltipAction.classList.remove('hidden');
         } else if (this.doubleMode) {
           this.grid100TooltipAction.textContent = tile
-            ? `✖️2 Double to ${tile.value * 2}`
+            ? tile.isPowerup
+              ? '🚫 Cannot double 2× Power-Up'
+              : `✖️2 Double to ${tile.value * 2}`
             : 'Select a tile to double';
           this.grid100TooltipAction.classList.remove('hidden');
         } else if (this.notBestDoubleMode) {
           const maxVal = this.getHighestTileOnBoard();
           if (tile) {
-            if (tile.value >= maxVal) {
+            if (tile.isPowerup) {
+              this.grid100TooltipAction.textContent = '🚫 Cannot double 2× Power-Up';
+            } else if (tile.value >= maxVal) {
               this.grid100TooltipAction.textContent = `🚫 Highest tile (${tile.value})! Cannot double`;
             } else {
               this.grid100TooltipAction.textContent = `✖️2 Not Best: Double to ${tile.value * 2}`;
@@ -2806,7 +2947,9 @@ class Game8192 {
 
     // 3. Update HUD Bar text
     if (this.grid100HudText) {
-      if (tile) {
+      if (tile && tile.isPowerup) {
+        this.grid100HudText.textContent = `Hovering: 2× Power-Up at Row ${row + 1}, Col ${col + 1} (Slide any tile into it to double!)`;
+      } else if (tile) {
         let extra = '';
         if (this.notBestDoubleMode) {
           const maxVal = this.getHighestTileOnBoard();
