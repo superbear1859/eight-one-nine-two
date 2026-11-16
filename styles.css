@@ -1591,10 +1591,26 @@ body {
   border: 1.5px dashed rgba(119, 110, 101, 0.45);
 }
 
+.tile-powerup-double {
+  cursor: pointer;
+}
+
 .tile-powerup-double .tile-inner {
+  background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+  color: #e2e8f0;
+  border: 2px dashed rgba(226, 232, 240, 0.7);
+  box-shadow: inset 0 0 8px rgba(15, 23, 42, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.tile-powerup-double:hover .tile-inner {
+  filter: brightness(1.1);
+}
+
+.tile-powerup-double.tile-powerup-armed .tile-inner {
   background: linear-gradient(135deg, #06b6d4 0%, #6366f1 50%, #a855f7 100%);
   color: #ffffff;
-  border: 2px solid rgba(255, 255, 255, 0.75);
+  border: 2px solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 0 16px rgba(99, 102, 241, 0.55), inset 0 0 10px rgba(255, 255, 255, 0.25);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   animation: powerup-tile-pulse 1.8s ease-in-out infinite;

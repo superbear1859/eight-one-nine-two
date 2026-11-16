@@ -43,6 +43,7 @@ const MAX_NOT_BEST_DOUBLES = 3;
 const MAX_HISTORY_LENGTH = 100;
 const BOARD_DOUBLE_POWERUP_CHANCE = 0.12;
 const BOARD_DOUBLE_POWERUP_SERIALIZED = -1;
+const BOARD_DOUBLE_POWERUP_ARMED_SERIALIZED = -2;
 const SECRET_PASSWORD = 'superbearthegreat';
 const SECRET_POWERUP_AMOUNT = 100;
 const MILESTONE_TILES = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
@@ -1429,7 +1430,12 @@ class Game8192 {
             row.map((tile) =>
               tile
                 ? tile.isPowerup
-                  ? { isPowerup: true, powerupType: 'double', value: 0 }
+                  ? {
+                      isPowerup: true,
+                      powerupType: 'double',
+                      armed: Boolean(tile.armed),
+                      value: 0,
+                    }
                   : { value: tile.value }
                 : null
             )
@@ -1590,6 +1596,7 @@ class Game8192 {
       value: 0,
       isPowerup: true,
       powerupType: 'double',
+      armed: false,
       row: r,
       col: c,
       isNew: true,
@@ -1607,7 +1614,13 @@ class Game8192 {
         for (let c = 0; c < this.size; c++) {
           const tile = this.grid[r] && this.grid[r][c];
           if (tile && tile.isPowerup) {
-            tiles.push([r, c, BOARD_DOUBLE_POWERUP_SERIALIZED]);
+            tiles.push([
+              r,
+              c,
+              tile.armed
+                ? BOARD_DOUBLE_POWERUP_ARMED_SERIALIZED
+                : BOARD_DOUBLE_POWERUP_SERIALIZED,
+            ]);
           } else if (tile && tile.value > 0) {
             tiles.push([r, c, tile.value]);
           }
@@ -1617,7 +1630,13 @@ class Game8192 {
     }
     return this.grid.map((row) =>
       row.map((tile) =>
-        tile ? (tile.isPowerup ? BOARD_DOUBLE_POWERUP_SERIALIZED : tile.value) : 0
+        tile
+          ? tile.isPowerup
+            ? tile.armed
+              ? BOARD_DOUBLE_POWERUP_ARMED_SERIALIZED
+              : BOARD_DOUBLE_POWERUP_SERIALIZED
+            : tile.value
+          : 0
       )
     );
   }
@@ -1632,11 +1651,12 @@ class Game8192 {
       mergedFrom: null,
     });
 
-    const makePowerupTile = (r, c) => ({
+    const makePowerupTile = (r, c, armed = false) => ({
       id: this.nextTileId++,
       value: 0,
       isPowerup: true,
       powerupType: 'double',
+      armed: Boolean(armed),
       row: r,
       col: c,
       isNew: false,
@@ -1649,8 +1669,11 @@ class Game8192 {
         if (!Array.isArray(entry) || entry.length < 3) continue;
         const [r, c, val] = entry;
         if (r >= 0 && r < this.size && c >= 0 && c < this.size) {
-          if (val === BOARD_DOUBLE_POWERUP_SERIALIZED) {
-            restored[r][c] = makePowerupTile(r, c);
+          if (
+            val === BOARD_DOUBLE_POWERUP_SERIALIZED ||
+            val === BOARD_DOUBLE_POWERUP_ARMED_SERIALIZED
+          ) {
+            restored[r][c] = makePowerupTile(r, c, val === BOARD_DOUBLE_POWERUP_ARMED_SERIALIZED);
           } else if (val > 0) {
             restored[r][c] = makeTile(r, c, val);
           }
@@ -1666,13 +1689,16 @@ class Game8192 {
       for (let c = 0; c < Math.min(row.length, this.size); c++) {
         const cell = row[c];
         if (cell && cell.isPowerup) {
-          restored[r][c] = makePowerupTile(r, c);
+          restored[r][c] = makePowerupTile(r, c, Boolean(cell.armed));
           continue;
         }
         const val =
           typeof cell === 'number' ? cell : cell && typeof cell.value === 'number' ? cell.value : 0;
-        if (val === BOARD_DOUBLE_POWERUP_SERIALIZED) {
-          restored[r][c] = makePowerupTile(r, c);
+        if (
+          val === BOARD_DOUBLE_POWERUP_SERIALIZED ||
+          val === BOARD_DOUBLE_POWERUP_ARMED_SERIALIZED
+        ) {
+          restored[r][c] = makePowerupTile(r, c, val === BOARD_DOUBLE_POWERUP_ARMED_SERIALIZED);
         } else if (val > 0) {
           restored[r][c] = makeTile(r, c, val);
         }
@@ -1772,8 +1798,8 @@ class Game8192 {
             ? this.grid[nextR][nextC]
             : null;
 
-        if (obstacle && obstacle.isPowerup) {
-          // Tile runs into the 2x power-up: double the tile's value and consume the power-up
+        if (obstacle && obstacle.isPowerup && obstacle.armed) {
+          // Tile runs into an armed 2x power-up: double the tile's value and consume the power-up
           const doubledValue = tile.value * 2;
           this.grid[r][c] = null;
 
@@ -1943,7 +1969,34 @@ class Game8192 {
     }
 
     if (spawnedBoardPowerup && !justWon && !earnedPowerup && doubledByPowerupValue === 0) {
-      this.showToast('⚡ A 2× Power-Up tile appeared on the board!');
+      this.showToast('⚡ A 2× Power-Up appeared! Press it to arm.');
+    }
+
+    this.saveState();
+    this.renderBoard(false);
+    this.updateUI();
+  }
+
+  toggleBoardPowerupArmed(r, c) {
+    if (this.battlePaused || this.over || (this.won && !this.keepPlaying)) return;
+    const tile = this.grid[r] && this.grid[r][c];
+    if (!tile || !tile.isPowerup) return;
+
+    tile.armed = !tile.armed;
+    if (tile.armed) {
+      if (this.sound && this.sound.playSwap) {
+        this.sound.playSwap();
+      }
+      this.showToast('⚡ 2× Power-Up ARMED! Slide any tile into it to double!');
+    } else {
+      if (this.sound && this.sound.playSlide) {
+        this.sound.playSlide();
+      }
+      this.showToast('⏸️ 2× Power-Up disarmed.');
+    }
+
+    if (this.identifierEnabled && this.lastHoverCell) {
+      this.updateHoverIdentifier(this.lastHoverCell.clientX, this.lastHoverCell.clientY);
     }
 
     this.saveState();
@@ -2538,6 +2591,7 @@ class Game8192 {
       }
 
       const classes = ['tile', tierClass];
+      if (isPowerup && tileObj.armed) classes.push('tile-powerup-armed');
       if (digitClass) classes.push(digitClass);
       if (tileObj.isNew && !instant) classes.push('tile-new');
       if (tileObj.mergedFrom && !instant) classes.push('tile-merged');
@@ -2851,11 +2905,15 @@ class Game8192 {
     if (this.grid100Tooltip) {
       if (tile && tile.isPowerup) {
         if (this.grid100TooltipChip) {
-          this.grid100TooltipChip.className = 'grid-100-tooltip-chip tile tile-powerup-double';
+          this.grid100TooltipChip.className = tile.armed
+            ? 'grid-100-tooltip-chip tile tile-powerup-double tile-powerup-armed'
+            : 'grid-100-tooltip-chip tile tile-powerup-double';
           this.grid100TooltipChip.innerHTML = '<div class="tile-inner">2×</div>';
         }
         if (this.grid100TooltipTitle) {
-          this.grid100TooltipTitle.textContent = '2× Power-Up';
+          this.grid100TooltipTitle.textContent = tile.armed
+            ? '2× Power-Up (Armed)'
+            : '2× Power-Up (Dormant)';
         }
       } else if (tile) {
         const valStr = String(tile.value);
@@ -2948,7 +3006,9 @@ class Game8192 {
     // 3. Update HUD Bar text
     if (this.grid100HudText) {
       if (tile && tile.isPowerup) {
-        this.grid100HudText.textContent = `Hovering: 2× Power-Up at Row ${row + 1}, Col ${col + 1} (Slide any tile into it to double!)`;
+        this.grid100HudText.textContent = tile.armed
+          ? `Hovering: 2× Power-Up (ARMED) at Row ${row + 1}, Col ${col + 1} (Slide any tile into it to double!)`
+          : `Hovering: 2× Power-Up (Dormant) at Row ${row + 1}, Col ${col + 1} (Press tile to arm!)`;
       } else if (tile) {
         let extra = '';
         if (this.notBestDoubleMode) {
@@ -3722,15 +3782,23 @@ class Game8192 {
       { passive: true }
     );
 
-    // Board click support for power-up interactions on every level
+    // Board click support for power-up interactions & arming board 2x power-up tiles
     this.boardContainer.addEventListener('click', (e) => {
-      if (!this.smashMode && !this.swapMode && !this.doubleMode && !this.notBestDoubleMode) return;
       if (e.target && typeof e.target.closest === 'function' && e.target.closest('.game-overlay')) return;
       const cellInfo = this.getCellFromPointer(e.clientX, e.clientY);
       if (!cellInfo) return;
       const { row, col } = cellInfo;
       const tile = this.grid[row] && this.grid[row][col];
       if (!tile) return;
+
+      if (!this.smashMode && !this.swapMode && !this.doubleMode && !this.notBestDoubleMode) {
+        if (tile.isPowerup) {
+          e.stopPropagation();
+          this.toggleBoardPowerupArmed(row, col);
+        }
+        return;
+      }
+
       e.stopPropagation();
       if (this.smashMode) {
         this.smashTileAt(row, col);
